@@ -2,6 +2,43 @@
 
 import { useState } from "react";
 import { Calculator as CalcIcon, Delete, RotateCcw, Sparkles, HelpCircle, Info } from "lucide-react";
+import { evaluate, format } from "mathjs";
+
+/**
+ * แปลงข้อความที่ผู้ใช้พิมพ์ในหน้าจอ (displayValue) ให้อยู่ในรูปแบบที่
+ * math.js เข้าใจได้ถูกต้อง เนื่องจากปุ่มบางปุ่มส่งสัญลักษณ์ที่ไม่ตรงกับ
+ * ไวยากรณ์ของ math.js โดยตรง (เช่น π ต้องแปลงเป็นคำว่า pi)
+ *
+ * @param expr ข้อความดิบจาก displayValue
+ * @returns ข้อความที่พร้อมส่งเข้า evaluate() ของ math.js
+ */
+function preprocessExpression(expr: string): string {
+  let result = expr;
+
+  // แปลงสัญลักษณ์ π ให้เป็นคำว่า pi ที่ math.js รู้จัก
+  result = result.replaceAll("π", "pi");
+
+  // แปลงเครื่องหมาย % แบบเปอร์เซ็นต์ (เช่น 50%) ให้เป็น (50/100)
+  // เพราะ % ใน math.js ปกติหมายถึง modulo ไม่ใช่เปอร์เซ็นต์
+  result = result.replace(/(\d+(\.\d+)?)%/g, "($1/100)");
+
+  return result;
+}
+
+/**
+ * จัดรูปแบบผลลัพธ์ตัวเลขให้อ่านง่าย ตัดทศนิยมที่ยาวเกินไปออก
+ * และกันปัญหา floating point error (เช่น 0.1+0.2 ไม่ให้เพี้ยนเป็น 0.30000000000000004)
+ *
+ * @param value ผลลัพธ์ดิบที่ได้จาก math.js (อาจเป็น number, Fraction, Complex ฯลฯ)
+ * @returns ข้อความผลลัพธ์ที่พร้อมแสดงผล
+ */
+function formatResult(value: unknown): string {
+  if (typeof value === "number") {
+    return format(value, { precision: 12 });
+  }
+  // สำหรับผลลัพธ์ประเภทอื่น (เช่น หน่วยวัด, เศษส่วน) ให้ math.js จัดรูปแบบให้เอง
+  return format(value as never);
+}
 
 /**
  * หน้า Math Companion Scientific Calculator (src/app/calculator/page.tsx)
@@ -19,12 +56,21 @@ export default function CalculatorPage() {
   // state เดียวที่เก็บข้อความหรือนิพจน์คณิตศาสตร์ที่ผู้ใช้กดพิมพ์
   const [displayValue, setDisplayValue] = useState<string>("");
 
+  // state เก็บผลลัพธ์การคำนวณ (แสดงในบรรทัดที่ 2 ของจอ)
+  const [resultValue, setResultValue] = useState<string>("");
+
+  // state เก็บข้อความ error กรณีสมการที่พิมพ์ไม่ถูกต้อง (เช่น วงเล็บไม่ครบ)
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
   /**
    * ฟังก์ชันสำหรับเพิ่มตัวอักษร/สัญลักษณ์ลงใน state displayValue
    * @param val สัญลักษณ์ทางคณิตศาสตร์ที่จะต่อท้ายข้อความเดิม
    */
   const handleAppend = (val: string) => {
     setDisplayValue((prev) => prev + val);
+    // เคลียร์ผลลัพธ์/error เดิมทุกครั้งที่ผู้ใช้พิมพ์ต่อ เพื่อไม่ให้ค้างของเก่า
+    setResultValue("");
+    setErrorMessage("");
   };
 
   /**
@@ -32,6 +78,8 @@ export default function CalculatorPage() {
    */
   const handleDelete = () => {
     setDisplayValue((prev) => prev.slice(0, -1));
+    setResultValue("");
+    setErrorMessage("");
   };
 
   /**
@@ -39,15 +87,31 @@ export default function CalculatorPage() {
    */
   const handleClear = () => {
     setDisplayValue("");
+    setResultValue("");
+    setErrorMessage("");
   };
 
   /**
-   * ฟังก์ชันที่จะถูกเรียกเมื่อผู้ใช้กดปุ่ม "="
-   * ข้อกำหนด: ห้ามใส่ logic คำนวณ หรือ eval() โดยเด็ดขาด
-   * จะมีเพื่อนร่วมทีมคนอื่นมาเขียนต่อในฟังก์ชันนี้ภายหลัง
+   * ฟังก์ชันที่ถูกเรียกเมื่อผู้ใช้กดปุ่ม "="
+   * ใช้ math.js เป็นตัวคำนวณจริง (evaluate) โดยไม่ใช้ eval() ของ JavaScript
+   * เพื่อความปลอดภัย (กัน code injection) และความแม่นยำของค่าทศนิยม
    */
   const handleCalculate = () => {
-    // TODO: ใส่ logic คำนวณตรงนี้
+    // ไม่ต้องทำอะไรถ้าจอว่างเปล่า
+    if (!displayValue.trim()) {
+      return;
+    }
+
+    try {
+      const expression = preprocessExpression(displayValue);
+      const rawResult = evaluate(expression);
+      setResultValue(formatResult(rawResult));
+      setErrorMessage("");
+    } catch (err) {
+      // ดักจับกรณีสมการผิดรูปแบบ เช่น วงเล็บไม่ครบ หรือพิมพ์สัญลักษณ์ผิด
+      setResultValue("");
+      setErrorMessage("รูปแบบสมการไม่ถูกต้อง");
+    }
   };
 
   return (
@@ -86,14 +150,20 @@ export default function CalculatorPage() {
               )}
             </div>
 
-            {/* Line 2: Result Preview Line (Placeholder for calculation result) */}
+            {/* Line 2: Result Line (แสดงผลลัพธ์จริงจาก math.js หรือข้อความ error) */}
             <div className="min-h-[40px] text-slate-500 font-mono text-2xl sm:text-3xl font-black tracking-tight border-t border-slate-900 pt-2 flex items-center justify-between">
               <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-slate-600">
                 [ผลลัพธ์]
               </span>
-              <span className="text-slate-400">
-                {displayValue ? "= Ready" : "0"}
-              </span>
+              {errorMessage ? (
+                <span className="text-rose-400 text-sm sm:text-base font-sans font-bold">
+                  {errorMessage}
+                </span>
+              ) : (
+                <span className={resultValue ? "text-white" : "text-slate-400"}>
+                  {resultValue || "0"}
+                </span>
+              )}
             </div>
 
           </div>
@@ -321,9 +391,11 @@ export default function CalculatorPage() {
           <div className="mt-6 p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-xs text-slate-400 flex items-start gap-3">
             <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-slate-300 mb-0.5">หมายเหตุสำหรับทีม Backend / Logic Developer:</p>
+              <p className="font-bold text-slate-300 mb-0.5">สถานะฟังก์ชันคำนวณ:</p>
               <p className="text-[11px] leading-relaxed text-slate-400">
-                ฟังก์ชัน <code className="text-purple-300 bg-slate-900 px-1 py-0.5 rounded font-mono">handleCalculate()</code> ในไฟล์ <code className="text-slate-300 font-mono">src/app/calculator/page.tsx</code> ถูกเตรียมไว้สำหรับการต่อ Logic การคำนวณจริงในภายหลังตามข้อกำหนด
+                ฟังก์ชัน <code className="text-purple-300 bg-slate-900 px-1 py-0.5 rounded font-mono">handleCalculate()</code> เชื่อมกับ math.js แล้ว
+                รองรับ +, -, ×, ÷, sin/cos/tan, log/ln, √, x², x^y, factorial (!), π, e และวงเล็บ
+                พร้อมดักจับสมการที่พิมพ์ผิดรูปแบบ
               </p>
             </div>
           </div>
