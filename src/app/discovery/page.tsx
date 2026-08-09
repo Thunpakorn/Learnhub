@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, ArrowUpRight, Filter, BookOpen } from "lucide-react";
+import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, Filter } from "lucide-react";
 
 /**
  * Interface สำหรับโครงสร้างข้อมูลการ์ดความรู้ Contextual Discovery Card (Mock Data)
@@ -219,138 +219,6 @@ export default function DiscoveryPage() {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Subject Filter Pills */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {subjects.map((sub) => {
-            const Icon = sub.icon;
-            const isSelected = selectedSubject === sub.name;
-            return (
-              <button
-                key={sub.name}
-                onClick={() => setSelectedSubject(sub.name)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
-                  isSelected
-                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 shadow-lg shadow-orange-500/20 scale-105"
-                    : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800"
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isSelected ? "text-slate-950 stroke-[2.5]" : "text-orange-400"}`} />
-                {sub.name}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Knowledge Cards Grid */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-orange-400" />
-              ผลลัพธ์การ์ดความรู้ ({filteredCards.length} หัวข้อ)
-            </h2>
-            <span className="text-xs text-slate-400 font-mono">
-              หมวดวิชา: <strong className="text-orange-400">{selectedSubject}</strong>
-            </span>
-          </div>
-
-          {filteredCards.length === 0 ? (
-            <div className="text-center py-16 bg-slate-900/50 rounded-3xl border border-slate-800">
-              <Search className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-slate-300">ไม่พบการ์ดความรู้ที่ตรงกับการค้นหา</h3>
-              <p className="text-xs text-slate-500 mt-1">ลองเปลี่ยนคำค้นหาเป็นสิ่งรอบตัวอื่นๆ หรือเลือกระบุหมวดวิชา "ทั้งหมด"</p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedSubject("ทั้งหมด");
-                }}
-                className="mt-4 px-4 py-2 rounded-xl bg-orange-500 text-slate-950 text-xs font-bold"
-              >
-                รีเซ็ตการค้นหา
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCards.map((card) => (
-                <div
-                  key={card.id}
-                  className={`group relative bg-slate-900/80 border rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between overflow-hidden shadow-xl ${card.accentBorder}`}
-                >
-                  {/* Card Header Background Glow */}
-                  <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-br ${card.bgGlow} rounded-full blur-2xl pointer-events-none`} />
-
-                  <div>
-                    {/* Top Subject Tag & Read Time */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${card.tagBg} ${card.tagText}`}>
-                        {card.subjectTh}
-                      </span>
-                      <span className="text-[11px] font-medium text-slate-500 bg-slate-950/60 px-2.5 py-1 rounded-full border border-slate-800">
-                        {card.readTime}
-                      </span>
-                    </div>
-
-                    {/* Everyday Topic Badge */}
-                    <div className="text-xs font-bold uppercase tracking-wider text-orange-400 mb-1">
-                      สิ่งรอบตัว: <span className="text-slate-200">{card.topic}</span>
-                    </div>
-
-                    {/* Card Title */}
-                    <h3 className="text-xl font-extrabold text-white mb-2 group-hover:text-amber-400 transition-colors leading-snug">
-                      {card.title}
-                    </h3>
-
-                    {/* Category Tag */}
-                    <p className="text-xs text-slate-400 font-medium mb-3">
-                      📌 {card.categoryTag}
-                    </p>
-
-                    {/* Summary */}
-                    <p className="text-slate-300 text-sm leading-relaxed mb-4">
-                      {card.summary}
-                    </p>
-
-                    {/* Key Concepts Tags */}
-                    <div className="space-y-1.5 mb-4">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                        แนวคิดสำคัญ:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {card.keyConcepts.map((concept, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-950/80 text-slate-300 border border-slate-800"
-                          >
-                            {concept}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Formula Preview & Action Footer */}
-                  <div className="pt-4 border-t border-slate-800/80 space-y-3">
-                    {card.formulaPreview && (
-                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between text-xs font-mono text-amber-300">
-                        <span className="text-[10px] text-slate-500 font-sans">สูตรคำนวณ:</span>
-                        <span className="font-bold">{card.formulaPreview}</span>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <span>ดูคำอธิบายฉบับเต็ม</span>
-                      <ArrowUpRight className="w-4 h-4 text-orange-400" />
-                    </button>
-                  </div>
-
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
       </div>
