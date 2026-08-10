@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: isOpenRouter ? "openai/gpt-4o-mini",
+        model: "openai/gpt-oss-20b:free",
         messages: [
           { role: "system", content: "You are a helpful education assistant." },
           { role: "user", content: prompt },

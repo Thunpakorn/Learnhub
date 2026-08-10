@@ -216,10 +216,10 @@ export default function DiscoveryPage() {
         <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSearch} className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 rounded-3xl blur-md opacity-40 group-hover:opacity-75 transition duration-300 pointer-events-none" />
-            
-            <div className="relative flex flex-col sm:flex-row items-stretch bg-slate-900/90 border border-slate-700/80 rounded-2xl p-2 shadow-2xl backdrop-blur-xl">
-              <div className="flex items-center w-full sm:w-auto">
-                <Search className="w-6 h-6 text-slate-400 ml-3 shrink-0" />
+
+            <div className="relative flex items-center bg-slate-900/90 border border-slate-700/80 rounded-2xl p-2 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center flex-1 px-3">
+                <Search className="w-6 h-6 text-slate-400 shrink-0 mr-3" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -229,7 +229,7 @@ export default function DiscoveryPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 mt-2 sm:mt-0 sm:ml-2">
+              <div className="flex items-center gap-2 pr-2">
                 {searchQuery && (
                   <button
                     type="button"
@@ -240,12 +240,13 @@ export default function DiscoveryPage() {
                     }}
                     className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 hover:text-white"
                   >
-                    ล้างคำค้น
+                    ล้าง
                   </button>
                 )}
+
                 <button
                   type="submit"
-                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold text-sm shadow-md shadow-orange-500/20 hover:opacity-95 transition-all flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold text-sm shadow-md shadow-orange-500/20 hover:opacity-95 transition-all flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4 stroke-[2.5]" />
                   <span className="hidden sm:inline">ค้นหา</span>
