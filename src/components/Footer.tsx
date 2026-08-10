@@ -22,7 +22,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed max-w-md">
-              แพลตฟอร์ม EdTech ยุคใหม่สำหรับนักเรียนระดับมัธยมปลาย เปลี่ยนพฤติกรรมการเรียนรู้จาก Passive เป็น Active ค้นพบวิทยาศาสตร์และคณิตศาสตร์ที่ซ่อนอยู่ในชีวิตประจำวัน
+              แพลตฟอร์มการเรียนรู้ยุคใหม่สำหรับนักเรียนระดับมัธยมปลาย เปลี่ยนพฤติกรรมการเรียนรู้จาก Passive เป็น Active ค้นพบวิทยาศาสตร์และคณิตศาสตร์ที่ซ่อนอยู่ในชีวิตประจำวัน
             </p>
             <div className="flex items-center gap-3 pt-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20">
@@ -82,7 +82,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} LearnHub EdTech Platform. สงวนลิขสิทธิ์เฉพาะ UI/UX Template</p>
+          <p>© {new Date().getFullYear()} LearnHub Platform. สงวนลิขสิทธิ์เฉพาะ UI/UX Template</p>
           <p className="text-slate-400">ออกแบบสำหรับนักเรียน ม.ปลาย ยุค Active Learning</p>
         </div>
       </div>

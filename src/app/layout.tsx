@@ -14,7 +14,7 @@ const promptFont = Prompt({
 
 export const metadata: Metadata = {
   title: "LearnHub - เปลี่ยนสิ่งรอบตัวเป็นความรู้คณิต-วิทย์ ม.ปลาย",
-  description: "แพลตฟอร์ม EdTech สำหรับนักเรียนระดับมัธยมปลาย เปลี่ยนพฤติกรรมการเรียนรู้จาก Passive เป็น Active ด้วย Discovery Engine, 3D Simulation และ Scientific Calculator",
+  description: "แพลตฟอร์มสำหรับนักเรียนระดับมัธยมปลาย เปลี่ยนพฤติกรรมการเรียนรู้จาก Passive เป็น Active ด้วย Discovery Engine, 3D Simulation และ Scientific Calculator",
 };
 
 export default function RootLayout({

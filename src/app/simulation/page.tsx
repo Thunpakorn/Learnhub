@@ -822,7 +822,7 @@ export default function SimulationPage() {
               )}
             </g>
             <text x={80} y={28} fontSize={12} fill="#f8fafc" fontWeight={700}>สุ่มไปแล้ว {total} ครั้ง</text>
-            <text x={80} y={44} fontSize={11} fill="#cbd5e1">ทอยล่าสุด: <strong className="text-amber-400">{lastRoll ?? "-"}</strong></text>
+            <text x={80} y={44} fontSize={11} fill="#cbd5e1">ทอยล่าสุด: <tspan fill="#f59e0b" fontWeight={800}> {lastRoll ?? "-"}</tspan></text>
 
             {/* เส้นอ้างอิงทางทฤษฎี (1/6) */}
             <line x1={startX} y1={expectedY} x2={340} y2={expectedY} stroke="#fb7185" strokeWidth={1.5} strokeDasharray="4 3" />
