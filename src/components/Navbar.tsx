@@ -35,9 +35,6 @@ export default function Navbar() {
                 <span className="text-2xl font-black tracking-tight text-white font-sans">
                   Learn<span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300">Hub</span>
                 </span>
-                <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/30 rounded-full uppercase">
-                  ม.ปลาย
-                </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">Active Learning Platform</p>
             </div>

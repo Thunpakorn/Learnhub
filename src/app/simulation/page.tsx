@@ -1,14 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Cpu, Play, RotateCcw, Sliders, Activity, Eye, Layers, ChevronRight } from "lucide-react";
+import {
+  Cpu,
+  Play,
+  Pause,
+  RotateCcw,
+  Sliders,
+  Activity,
+  Eye,
+  Layers,
+  ChevronRight,
+  Sparkles,
+  FlaskConical,
+  BookOpen,
+  CheckCircle2,
+  Atom,
+  Calculator as MathIcon,
+} from "lucide-react";
 
 const DEG = Math.PI / 180;
 
-/**
- * Config ของตัวแปรที่ปรับได้ในแต่ละ Preset
- * รองรับ 2 แบบ: slider (ตัวเลขต่อเนื่อง) และ select (ตัวเลือกไม่ต่อเนื่อง เช่น ชนิดตัวกลาง)
- */
 interface SliderParam {
   key: string;
   type: "slider";
@@ -31,13 +43,15 @@ type ParamConfig = SliderParam | SelectParam;
 interface SimulationPreset {
   id: string;
   name: string;
-  subject: string;
+  subject: "ฟิสิกส์" | "คณิตศาสตร์";
   category: string;
-  everyday: string; // สิ่งรอบตัวที่เชื่อมโยง
-  emoji: string; // ไอคอนตัวอย่างจริงให้เห็นภาพเร็วๆ
+  everyday: string;
+  emoji: string;
   description: string;
-  observation: string; // สังเกตอะไร (baseline hint จากหลักสูตร)
+  observation: string;
   iconColor: string;
+  badgeBg: string;
+  glowColor: string;
   params: ParamConfig[];
 }
 
@@ -52,6 +66,8 @@ const presets: SimulationPreset[] = [
     description: "ศึกษาความสัมพันธ์ระหว่างความยาวเชือก มุมเริ่มต้น และค่า g กับคาบการแกว่ง",
     observation: "คาบการแกว่งเปลี่ยนตามความยาวเชือก แต่ไม่เปลี่ยนตามมุมเริ่มต้น",
     iconColor: "text-sky-400 bg-sky-500/10 border-sky-500/30",
+    badgeBg: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+    glowColor: "rgba(56, 189, 248, 0.15)",
     params: [
       { key: "L", type: "slider", label: "ความยาวเชือก (L)", value: 1.5, min: 0.3, max: 3, step: 0.1, unit: "ม." },
       { key: "angle", type: "slider", label: "มุมเริ่มต้น (θ)", value: 30, min: 5, max: 70, step: 5, unit: "°" },
@@ -78,6 +94,8 @@ const presets: SimulationPreset[] = [
     description: "ปรับความเร็วต้นและมุมยิง เพื่อดูวิถีโค้งพาราโบลาและระยะไกลสุด",
     observation: "ระยะไกลสุดเกิดที่มุม 45° เสมอ ไม่ว่าความเร็วต้นเท่าไร",
     iconColor: "text-orange-400 bg-orange-500/10 border-orange-500/30",
+    badgeBg: "bg-orange-500/15 text-orange-300 border-orange-500/30",
+    glowColor: "rgba(249, 115, 22, 0.15)",
     params: [
       { key: "u", type: "slider", label: "ความเร็วต้น (u)", value: 20, min: 5, max: 40, step: 1, unit: "m/s" },
       { key: "angle", type: "slider", label: "มุมยิง (θ)", value: 45, min: 5, max: 85, step: 1, unit: "°" },
@@ -93,6 +111,8 @@ const presets: SimulationPreset[] = [
     description: "ปรับความยาวสายและแรงตึงสาย เพื่อดูว่าความถี่เสียง (โน้ต) เปลี่ยนไปอย่างไร",
     observation: "ความถี่เสียง (โน้ต) เปลี่ยนตามความยาว/แรงตึงสาย",
     iconColor: "text-purple-400 bg-purple-500/10 border-purple-500/30",
+    badgeBg: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+    glowColor: "rgba(168, 85, 247, 0.15)",
     params: [
       { key: "L", type: "slider", label: "ความยาวสาย (L)", value: 0.65, min: 0.3, max: 1.0, step: 0.05, unit: "ม." },
       { key: "T", type: "slider", label: "แรงตึงสาย (T)", value: 80, min: 20, max: 150, step: 5, unit: "N" },
@@ -108,6 +128,8 @@ const presets: SimulationPreset[] = [
     description: "ปรับมุมตกกระทบและชนิดตัวกลาง เพื่อดูมุมหักเหของแสง",
     observation: "มุมหักเหเปลี่ยนตามความหนาแน่นตัวกลาง",
     iconColor: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
+    badgeBg: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
+    glowColor: "rgba(6, 182, 212, 0.15)",
     params: [
       { key: "angle", type: "slider", label: "มุมตกกระทบ (θ₁)", value: 30, min: 5, max: 80, step: 1, unit: "°" },
       {
@@ -133,6 +155,8 @@ const presets: SimulationPreset[] = [
     description: "ปรับแอมพลิจูด ความถี่ และเฟส เพื่อดูรูปร่างกราฟ sin ที่เปลี่ยนไป",
     observation: "รูปร่างกราฟ sin/cos เปลี่ยนตามค่าที่ปรับ",
     iconColor: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+    badgeBg: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    glowColor: "rgba(245, 158, 11, 0.15)",
     params: [
       { key: "A", type: "slider", label: "แอมพลิจูด (A)", value: 1.5, min: 0.5, max: 3, step: 0.1, unit: "" },
       { key: "k", type: "slider", label: "ความถี่เชิงมุม (k)", value: 1, min: 0.5, max: 3, step: 0.1, unit: "" },
@@ -149,6 +173,8 @@ const presets: SimulationPreset[] = [
     description: "เลื่อนจุดบนกราฟระยะทาง-เวลา s(t) = t² เพื่อดูเส้นสัมผัส (ความเร็วขณะนั้น)",
     observation: "เส้นสัมผัส (tangent) เปลี่ยนความชันตามจุดที่เลือก",
     iconColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+    badgeBg: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+    glowColor: "rgba(16, 185, 129, 0.15)",
     params: [
       { key: "x0", type: "slider", label: "ตำแหน่งเวลา (t)", value: 4, min: 0.5, max: 9.5, step: 0.5, unit: "s" },
     ],
@@ -161,8 +187,10 @@ const presets: SimulationPreset[] = [
     everyday: "เงาต้นไม้/เสาธงตอนเช้า-เที่ยง-เย็น",
     emoji: "🌳",
     description: "ปรับความสูงต้นไม้และมุมดวงอาทิตย์ เพื่อดูว่าความยาวเงาเปลี่ยนไปอย่างไร",
-    observation: "เงายาวเมื่อดวงอาทิตย์อยู่ต่ำ (มุมน้อย ตอนเช้า/เย็น) และเงาสั้นเมื่อดวงอาทิตย์อยู่สูง (มุมมาก ตอนเที่ยง)",
+    observation: "เงายาวเมื่อดวงอาทิตย์อยู่ต่ำ (มุมน้อย) และเงาสั้นเมื่อดวงอาทิตย์อยู่สูง (มุมมาก)",
     iconColor: "text-lime-400 bg-lime-500/10 border-lime-500/30",
+    badgeBg: "bg-lime-500/15 text-lime-300 border-lime-500/30",
+    glowColor: "rgba(132, 204, 22, 0.15)",
     params: [
       { key: "height", type: "slider", label: "ความสูงต้นไม้ (h)", value: 4, min: 1, max: 10, step: 0.5, unit: "ม." },
       { key: "sunAngle", type: "slider", label: "มุมดวงอาทิตย์เหนือขอบฟ้า", value: 45, min: 10, max: 80, step: 5, unit: "°" },
@@ -178,6 +206,8 @@ const presets: SimulationPreset[] = [
     description: "สุ่มทอยลูกเต๋าจริงต่อเนื่อง แล้วดูว่าค่าเฉลี่ยลู่เข้าค่าคาดหวังทางทฤษฎีอย่างไร",
     observation: "กราฟผลลัพธ์ลู่เข้าค่าคาดหวังทางทฤษฎีเมื่อสุ่มมากขึ้น (กฎจำนวนมาก)",
     iconColor: "text-rose-400 bg-rose-500/10 border-rose-500/30",
+    badgeBg: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+    glowColor: "rgba(244, 63, 94, 0.15)",
     params: [
       {
         key: "speed",
@@ -197,12 +227,11 @@ const presets: SimulationPreset[] = [
 const G_MAP: Record<string, number> = { earth: 9.8, moon: 1.62, mars: 3.71 };
 const G_LABEL: Record<string, string> = { earth: "โลก", moon: "ดวงจันทร์", mars: "ดาวอังคาร" };
 const MEDIUM_MAP: Record<string, { n: number; label: string; color: string }> = {
-  water: { n: 1.33, label: "น้ำ", color: "#0ea5e9" },
+  water: { n: 1.33, label: "น้ำ", color: "#38bdf8" },
   glass: { n: 1.5, label: "แก้ว", color: "#94a3b8" },
-  diamond: { n: 2.42, label: "เพชร", color: "#c7d2fe" },
+  diamond: { n: 2.42, label: "เพชร", color: "#a5b4fc" },
 };
 
-/** จุดไข่ปลาบนหน้าลูกเต๋าตามค่า 1-6 (มาตรฐานลูกเต๋าจริง) */
 function DicePips({ value }: { value: number }) {
   const layout: Record<number, [number, number][]> = {
     1: [[17, 17]],
@@ -235,11 +264,11 @@ export default function SimulationPage() {
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [elapsed, setElapsed] = useState<number>(0);
   const [rolls, setRolls] = useState<number[]>([]);
+  const [activeSubject, setActiveSubject] = useState<"all" | "ฟิสิกส์" | "คณิตศาสตร์">("all");
 
   const num = (key: string) => Number(paramValues[key]);
   const str = (key: string) => String(paramValues[key]);
 
-  // Clock กลาง ขับเคลื่อนแอนิเมชันของทุก preset ที่ต้องการเวลา (ลูกตุ้ม, โพรเจกไทล์, สาย, วงกลม)
   useEffect(() => {
     if (!isPlaying) return;
     let raf = 0;
@@ -254,7 +283,6 @@ export default function SimulationPage() {
     return () => cancelAnimationFrame(raf);
   }, [isPlaying]);
 
-  // ตัวสุ่มลูกเต๋าจริงสำหรับ preset ความน่าจะเป็น
   useEffect(() => {
     if (activePreset.id !== "probability" || !isPlaying) return;
     const batch = num("speed") || 1;
@@ -289,7 +317,10 @@ export default function SimulationPage() {
     setParamValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  /** คำนวณค่าที่แสดงผล + คำอธิบายแบบไดนามิกตาม preset ปัจจุบัน */
+  const filteredPresets = presets.filter(
+    (p) => activeSubject === "all" || p.subject === activeSubject
+  );
+
   function getComputed(): { stats: { label: string; value: string }[]; explain: string } {
     switch (activePreset.id) {
       case "pendulum": {
@@ -323,7 +354,7 @@ export default function SimulationPage() {
       case "guitar": {
         const L = num("L");
         const T = num("T");
-        const mu = 0.005; // มวลต่อความยาวโดยประมาณของสายกีตาร์ (kg/m)
+        const mu = 0.005;
         const f = (1 / (2 * L)) * Math.sqrt(T / mu);
         const pitchLabel = f < 120 ? "เสียงทุ้ม 🔉" : f < 260 ? "เสียงกลาง 🔊" : "เสียงแหลม 📯";
         return {
@@ -401,7 +432,7 @@ export default function SimulationPage() {
     }
   }
 
-  /** วาดภาพจำลองแบบ SVG ตาม preset ปัจจุบัน คำนวณจากค่าตัวแปรจริงและเวลา (elapsed) */
+  /** วาดภาพจำลองแบบ Real-Life Photorealistic SVG (ฉากหลังภาพจริง + เลเยอร์เวกเตอร์ตอบสนอง) */
   function renderVisual() {
     switch (activePreset.id) {
       case "pendulum": {
@@ -410,33 +441,45 @@ export default function SimulationPage() {
         const angleMax = num("angle") * DEG;
         const T = 2 * Math.PI * Math.sqrt(L / g);
         const angle = isPlaying ? angleMax * Math.cos((2 * Math.PI * elapsed) / T) : angleMax;
-        const pivot = { x: 160, y: 34 };
-        const rodPx = 40 + L * 55;
+        const pivot = { x: 180, y: 38 };
+        const rodPx = 45 + L * 58;
         const bob = { x: pivot.x + rodPx * Math.sin(angle), y: pivot.y + rodPx * Math.cos(angle) };
         const leftGuide = { x: pivot.x + rodPx * Math.sin(-angleMax), y: pivot.y + rodPx * Math.cos(-angleMax) };
         const rightGuide = { x: pivot.x + rodPx * Math.sin(angleMax), y: pivot.y + rodPx * Math.cos(angleMax) };
+
         return (
-          <svg viewBox="0 0 320 260" className="w-full max-w-sm mx-auto">
+          <svg viewBox="0 0 360 270" className="w-full max-w-md mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80">
             <defs>
-              <radialGradient id="bobGrad" cx="35%" cy="30%" r="70%">
-                <stop offset="0%" stopColor="#7dd3fc" />
-                <stop offset="55%" stopColor="#38bdf8" />
-                <stop offset="100%" stopColor="#0369a1" />
+              <radialGradient id="brassBob3D" cx="35%" cy="30%" r="70%">
+                <stop offset="0%" stopColor="#fef3c7" />
+                <stop offset="25%" stopColor="#fbbf24" />
+                <stop offset="70%" stopColor="#d97706" />
+                <stop offset="100%" stopColor="#78350f" />
               </radialGradient>
             </defs>
-            {/* เพดานยึด (นาฬิกา/ชิงช้า) */}
-            <rect x={pivot.x - 55} y={pivot.y - 14} width={110} height={10} rx={3} fill="#1e293b" stroke="#334155" />
-            {Array.from({ length: 9 }).map((_, i) => (
-              <line key={i} x1={pivot.x - 50 + i * 12.5} y1={pivot.y - 4} x2={pivot.x - 58 + i * 12.5} y2={pivot.y + 6} stroke="#334155" strokeWidth={1.5} />
-            ))}
-            {/* ขอบเขตมุมแกว่งสุด */}
-            <line x1={pivot.x} y1={pivot.y} x2={leftGuide.x} y2={leftGuide.y} stroke="#334155" strokeWidth={1} strokeDasharray="3 3" />
-            <line x1={pivot.x} y1={pivot.y} x2={rightGuide.x} y2={rightGuide.y} stroke="#334155" strokeWidth={1} strokeDasharray="3 3" />
-            {/* เชือกและลูกตุ้ม */}
-            <line x1={pivot.x} y1={pivot.y} x2={bob.x} y2={bob.y} stroke="#64748b" strokeWidth={2} />
-            <circle cx={pivot.x} cy={pivot.y} r={4} fill="#94a3b8" />
-            <circle cx={bob.x} cy={bob.y} r={18} fill="url(#bobGrad)" stroke="#0c4a6e" strokeWidth={1} />
-            <circle cx={bob.x - 5} cy={bob.y - 6} r={4} fill="#e0f2fe" fillOpacity={0.85} />
+
+            {/* ฉากหลังภาพตู้ไม้โบราณจริง Photorealistic Clock Cabinet Background */}
+            <image href="/simulations/pendulum_clock_bg.png" x="0" y="0" width="360" height="270" preserveAspectRatio="xMidYMid slice" opacity="0.85" />
+            <rect x="0" y="0" width="360" height="270" fill="#000000" fillOpacity="0.2" />
+
+            {/* มุมแกว่งสูงสุดซ้าย-ขวา */}
+            <line x1={pivot.x} y1={pivot.y} x2={leftGuide.x} y2={leftGuide.y} stroke="#fbbf2466" strokeWidth={1.5} strokeDasharray="4 3" />
+            <line x1={pivot.x} y1={pivot.y} x2={rightGuide.x} y2={rightGuide.y} stroke="#fbbf2466" strokeWidth={1.5} strokeDasharray="4 3" />
+
+            {/* ก้านและหัวยึดทองเหลือง 3D Brass Rod & Pivot */}
+            <line x1={pivot.x} y1={pivot.y} x2={bob.x} y2={bob.y} stroke="#fef3c7" strokeWidth={3} strokeLinecap="round" />
+            <line x1={pivot.x} y1={pivot.y} x2={bob.x} y2={bob.y} stroke="#b45309" strokeWidth={1} />
+            <circle cx={pivot.x} cy={pivot.y} r={6} fill="#fbbf24" stroke="#ffffff" strokeWidth={2} />
+
+            {/* ลูกตุ้มทองเหลืองบริสุทธิ์ Real Brass Bob */}
+            <circle cx={bob.x} cy={bob.y} r={21} fill="url(#brassBob3D)" stroke="#451a03" strokeWidth={1.5} />
+            <circle cx={bob.x - 6} cy={bob.y - 7} r={6} fill="#ffffff" fillOpacity={0.8} />
+
+            {/* ป้าย Telemetry สลักทองเหลือง */}
+            <g transform="translate(15, 15)">
+              <rect x={0} y={0} width={95} height={28} rx={6} fill="#0f172acc" stroke="#fbbf24" strokeWidth={1.5} />
+              <text x={10} y={18} fill="#fef3c7" fontSize={11} fontWeight={800} fontFamily="mono">⏱️ T = {T.toFixed(2)}s</text>
+            </g>
           </svg>
         );
       }
@@ -446,14 +489,14 @@ export default function SimulationPage() {
         const g = 9.8;
         const flight = (2 * u * Math.sin(angle)) / g || 0.01;
         const range = (u * u * Math.sin(2 * angle)) / g;
-        // สเกลคงที่ (ไม่ปรับตามค่า u/angle) เพื่อให้เห็นความแตกต่างของระยะจริงเมื่อปรับค่า
-        const scaleX = 1.55; // px ต่อ 1 เมตร (แนวนอน)
-        const scaleY = 1.85; // px ต่อ 1 เมตร (แนวตั้ง)
-        const originX = 25;
+        const maxH = (u * Math.sin(angle)) ** 2 / (2 * g);
+        const scaleX = 1.6;
+        const scaleY = 1.9;
+        const originX = 30;
         const groundY = 195;
         const pts: string[] = [];
-        for (let i = 0; i <= 40; i++) {
-          const t = (flight * i) / 40;
+        for (let i = 0; i <= 50; i++) {
+          const t = (flight * i) / 50;
           const x = originX + u * Math.cos(angle) * t * scaleX;
           const y = groundY - u * Math.sin(angle) * t * scaleY + 0.5 * g * t * t * scaleY;
           pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
@@ -461,44 +504,56 @@ export default function SimulationPage() {
         const t = isPlaying ? elapsed % flight : flight / 2;
         const bx = originX + u * Math.cos(angle) * t * scaleX;
         const by = groundY - u * Math.sin(angle) * t * scaleY + 0.5 * g * t * t * scaleY;
-        const hoopX = Math.min(originX + range * scaleX, 300);
+        const hoopX = Math.min(originX + range * scaleX, 310);
+        const apexX = originX + (u * Math.cos(angle) * (flight / 2)) * scaleX;
+        const apexY = groundY - maxH * scaleY;
+
         return (
-          <svg viewBox="0 0 320 220" className="w-full max-w-md mx-auto">
+          <svg viewBox="0 0 360 240" className="w-full max-w-md mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80">
             <defs>
-              <radialGradient id="ballGrad" cx="35%" cy="30%" r="70%">
-                <stop offset="0%" stopColor="#fdba74" />
-                <stop offset="55%" stopColor="#fb923c" />
-                <stop offset="100%" stopColor="#c2410c" />
+              <radialGradient id="realBball3D" cx="35%" cy="30%" r="75%">
+                <stop offset="0%" stopColor="#fed7aa" />
+                <stop offset="30%" stopColor="#f97316" />
+                <stop offset="75%" stopColor="#ea580c" />
+                <stop offset="100%" stopColor="#431407" />
               </radialGradient>
-              <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#16532922" />
-                <stop offset="100%" stopColor="#16532966" />
-              </linearGradient>
             </defs>
-            <rect x={0} y={195} width={320} height={25} fill="url(#groundGrad)" />
-            <line x1={20} y1={195} x2={300} y2={195} stroke="#334155" strokeWidth={2} />
-            {/* ไม้บรรทัดระยะทางบนพื้น */}
-            {[0, 20, 40, 60, 80, 100, 120, 140, 160].map((m) => {
-              const x = originX + m * scaleX;
-              if (x > 300) return null;
-              return (
-                <g key={m}>
-                  <line x1={x} y1={195} x2={x} y2={200} stroke="#475569" strokeWidth={1} />
-                  <text x={x} y={212} fontSize={8} fill="#64748b" textAnchor="middle">{m}m</text>
-                </g>
-              );
-            })}
-            {/* ห่วงบาสเกตบอลที่ตำแหน่งจุดตกจริง */}
-            <line x1={hoopX} y1={195} x2={hoopX} y2={150} stroke="#78350f" strokeWidth={3} />
-            <rect x={hoopX - 2} y={128} width={26} height={18} fill="#e2e8f0" fillOpacity={0.12} stroke="#94a3b8" strokeWidth={1} />
-            <ellipse cx={hoopX} cy={150} rx={14} ry={4} fill="none" stroke="#fb923c" strokeWidth={2.5} />
-            {/* วิถีโค้ง */}
-            <polyline points={pts.join(" ")} fill="none" stroke="#fdba7488" strokeWidth={2} strokeDasharray="4 3" />
-            {/* ลูกบาสเกตบอล */}
-            <circle cx={bx} cy={by} r={9} fill="url(#ballGrad)" stroke="#7c2d12" strokeWidth={1} />
-            <path d={`M ${bx - 9} ${by} Q ${bx} ${by - 4} ${bx + 9} ${by}`} stroke="#7c2d12" strokeWidth={1} fill="none" />
-            <path d={`M ${bx} ${by - 9} Q ${bx - 4} ${by} ${bx} ${by + 9}`} stroke="#7c2d12" strokeWidth={1} fill="none" />
-            <text x={hoopX} y={118} fontSize={10} fill="#fb923c" textAnchor="middle">R = {range.toFixed(1)}m</text>
+
+            {/* ฉากหลังสนามบาสเกตบอลไม้จริง Photorealistic Basketball Court Background */}
+            <image href="/simulations/basketball_court_bg.png" x="0" y="0" width="360" height="240" preserveAspectRatio="xMidYMid slice" opacity="0.9" />
+
+            {/* แป้นและห่วงบาสเกตบอลอาชีพ Pro Basketball Stand */}
+            <line x1={hoopX} y1={195} x2={hoopX} y2={135} stroke="#1e293b" strokeWidth={5} />
+            <rect x={hoopX - 4} y={110} width={30} height={26} fill="#ffffff" fillOpacity={0.3} stroke="#f8fafc" strokeWidth={2} rx={2} />
+            <rect x={hoopX + 2} y={120} width={18} height={12} fill="none" stroke="#ea580c" strokeWidth={2} />
+            <ellipse cx={hoopX} cy={136} rx={15} ry={4.5} fill="none" stroke="#ea580c" strokeWidth={3.5} />
+
+            {/* เส้นบอกระดับความสูงสุด H_max */}
+            {maxH > 2 && apexX < 330 && (
+              <g>
+                <line x1={originX} y1={apexY} x2={apexX} y2={apexY} stroke="#fb923c" strokeWidth={1.5} strokeDasharray="3 3" />
+                <text x={apexX + 5} y={apexY + 4} fontSize={9} fill="#f8fafc" fontWeight={800} fontFamily="mono">H = {maxH.toFixed(1)}m</text>
+              </g>
+            )}
+
+            {/* วิถีโค้งพาราโบลา Trajectory Trail */}
+            <polyline points={pts.join(" ")} fill="none" stroke="#f97316" strokeWidth={3} strokeDasharray="5 3" />
+
+            {/* ลูกบาสเกตบอล 3D (ร่องดำ 4 เส้น + แสงสะท้อน + การหมุน Spin) */}
+            <g transform={`translate(${bx}, ${by}) rotate(${isPlaying ? (elapsed * 280) % 360 : 0})`}>
+              <circle cx={0} cy={0} r={11} fill="url(#realBball3D)" stroke="#431407" strokeWidth={1.8} />
+              <line x1={-11} y1={0} x2={11} y2={0} stroke="#1e293b" strokeWidth={1.5} />
+              <line x1={0} y1={-11} x2={0} y2={11} stroke="#1e293b" strokeWidth={1.5} />
+              <path d="M -9 -6 Q -2 0 -9 6" stroke="#1e293b" strokeWidth={1.3} fill="none" />
+              <path d="M 9 -6 Q 2 0 9 6" stroke="#1e293b" strokeWidth={1.3} fill="none" />
+              <circle cx={-3.5} cy={-3.5} r={3} fill="#ffffff" fillOpacity={0.7} />
+            </g>
+
+            {/* ป้ายมาร์กเกอร์ระยะ R */}
+            <g transform={`translate(${Math.min(hoopX - 35, 260)}, 95)`}>
+              <rect x={0} y={0} width={75} height={22} rx={6} fill="#0f172acc" stroke="#f97316" strokeWidth={1.5} />
+              <text x={37} y={15} fontSize={10} fontWeight={800} fill="#f97316" textAnchor="middle" fontFamily="mono">R = {range.toFixed(1)}m</text>
+            </g>
           </svg>
         );
       }
@@ -507,52 +562,51 @@ export default function SimulationPage() {
         const T = num("T");
         const mu = 0.005;
         const f = (1 / (2 * L)) * Math.sqrt(T / mu);
-        const animSpeed = Math.min(Math.max(2 + f / 15, 2), 14); // ยิ่ง f สูง สายสั่นไวขึ้นเห็นชัด
+        const animSpeed = Math.min(Math.max(2 + f / 15, 2), 14);
         const pitchColor = f < 120 ? "#38bdf8" : f < 260 ? "#c084fc" : "#f472b6";
-        const amp = 15;
-        const w = 90 + L * 140; // ความยาวสายบนจอ ผูกกับ L โดยตรง
-        const startX = 60;
+        const amp = 16;
+        const w = 95 + L * 140;
+        const startX = 65;
         const endX = startX + w;
         const n = 40;
-        const pts: string[] = [];
+        const ptsUpper: string[] = [];
+        const ptsLower: string[] = [];
         for (let i = 0; i <= n; i++) {
           const frac = i / n;
           const x = startX + frac * w;
           const envelope = Math.sin(Math.PI * frac);
-          const y = 92 + amp * envelope * (isPlaying ? Math.sin(elapsed * animSpeed) : 1);
-          pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+          const yCur = 95 + amp * envelope * (isPlaying ? Math.sin(elapsed * animSpeed) : 1);
+          const yOpp = 95 - amp * envelope * (isPlaying ? Math.sin(elapsed * animSpeed) : 1);
+          ptsUpper.push(`${x.toFixed(1)},${yCur.toFixed(1)}`);
+          ptsLower.push(`${x.toFixed(1)},${yOpp.toFixed(1)}`);
         }
-        const soundCx = endX + 28;
-        const soundCy = 96;
+        const soundCx = endX + 32;
+        const soundCy = 95;
         const ringPulse = isPlaying ? (Math.sin(elapsed * animSpeed) + 1) / 2 : 0.5;
+
         return (
-          <svg viewBox="0 0 320 200" className="w-full max-w-md mx-auto">
-            <defs>
-              <radialGradient id="bodyGrad" cx="50%" cy="40%" r="70%">
-                <stop offset="0%" stopColor="#7c3aed33" />
-                <stop offset="100%" stopColor="#4c1d9522" />
-              </radialGradient>
-            </defs>
-            {/* ตัวกีตาร์ทรง figure-8 */}
-            <ellipse cx={endX + 28} cy={92} rx={40} ry={52} fill="url(#bodyGrad)" stroke="#7c3aed66" strokeWidth={1.5} />
-            <ellipse cx={endX + 28} cy={130} rx={28} ry={36} fill="url(#bodyGrad)" stroke="#7c3aed66" strokeWidth={1.5} />
-            {/* วงคลื่นเสียงที่พัลส์ตามความถี่จริง */}
-            <circle cx={soundCx} cy={soundCy} r={12 + ringPulse * 6} fill="none" stroke={pitchColor} strokeOpacity={0.5 - ringPulse * 0.2} strokeWidth={1.5} />
-            <circle cx={soundCx} cy={soundCy} r={12 + ringPulse * 12} fill="none" stroke={pitchColor} strokeOpacity={0.3 - ringPulse * 0.15} strokeWidth={1.5} />
-            <circle cx={soundCx} cy={soundCy} r={12} fill="#0f172a" stroke="#7c3aed66" strokeWidth={1.5} />
-            {/* คอ/หัวกีตาร์ */}
-            <rect x={startX - 38} y={88} width={38} height={8} rx={2} fill="#334155" />
-            <circle cx={startX - 34} cy={92} r={2.5} fill="#94a3b8" />
-            <circle cx={startX - 24} cy={92} r={2.5} fill="#94a3b8" />
-            <circle cx={startX - 14} cy={92} r={2.5} fill="#94a3b8" />
-            {/* สาย */}
-            <line x1={startX} y1={92} x2={endX} y2={92} stroke="#475569" strokeWidth={1} strokeDasharray="2 3" />
-            <circle cx={startX} cy={92} r={4} fill="#94a3b8" />
-            <circle cx={endX} cy={92} r={4} fill="#94a3b8" />
-            <polyline points={pts.join(" ")} fill="none" stroke={pitchColor} strokeWidth={2.5} />
-            {/* ตัวเลขความถี่ขนาดใหญ่ให้เห็นชัด */}
-            <text x={startX} y={170} fontSize={22} fontWeight={800} fill={pitchColor}>{f.toFixed(0)} Hz</text>
-            <text x={startX} y={188} fontSize={10} fill="#94a3b8">ยิ่งสายสั่นไว (ดูภาพ) ยิ่งเสียงสูง</text>
+          <svg viewBox="0 0 360 210" className="w-full max-w-md mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80">
+            {/* ฉากหลังตัวกีตาร์ไม้จริง Photorealistic Acoustic Guitar Body Background */}
+            <image href="/simulations/acoustic_guitar_bg.png" x="0" y="0" width="360" height="210" preserveAspectRatio="xMidYMid slice" opacity="0.85" />
+            <rect x="0" y="0" width="360" height="210" fill="#000000" fillOpacity="0.25" />
+
+            {/* วงคลื่นเสียงพัลส์เปล่งออกจากช่องเสียง */}
+            <circle cx={soundCx} cy={soundCy} r={19 + ringPulse * 16} fill="none" stroke={pitchColor} strokeOpacity={0.8 - ringPulse * 0.4} strokeWidth={2.5} />
+            <circle cx={soundCx} cy={soundCy} r={19 + ringPulse * 28} fill="none" stroke={pitchColor} strokeOpacity={0.4 - ringPulse * 0.2} strokeWidth={1.5} />
+
+            {/* หมุดยึดสายหัว-ท้าย */}
+            <rect x={startX - 12} y={75} width={12} height={40} fill="#1e293b" stroke="#cbd5e1" strokeWidth={1.5} rx={2} />
+            <rect x={endX} y={75} width={12} height={40} fill="#1e293b" stroke="#cbd5e1" strokeWidth={1.5} rx={2} />
+
+            {/* สายสั่นสะเทือน */}
+            <polyline points={ptsUpper.join(" ")} fill="none" stroke={pitchColor} strokeWidth={3} />
+            <polyline points={ptsLower.join(" ")} fill="none" stroke={pitchColor} strokeWidth={1} strokeOpacity={0.5} strokeDasharray="2 2" />
+
+            {/* ป้ายบอกระดับความถี่ f */}
+            <g transform="translate(200, 15)">
+              <rect x={0} y={0} width={140} height={32} rx={8} fill="#0f172ad0" stroke={pitchColor} strokeWidth={1.5} />
+              <text x={70} y={21} fontSize={16} fontWeight={900} fill={pitchColor} textAnchor="middle" fontFamily="mono">{f.toFixed(1)} Hz</text>
+            </g>
           </svg>
         );
       }
@@ -561,46 +615,40 @@ export default function SimulationPage() {
         const m = MEDIUM_MAP[str("medium")];
         const sinTh2 = Math.min(1, Math.sin(th1) / m.n);
         const th2 = Math.asin(sinTh2);
-        const cx = 160;
-        const cy = 115;
-        const inLen = 85;
-        const outLen = 85;
+        const cx = 180;
+        const cy = 120;
+        const inLen = 95;
+        const outLen = 95;
         const inX = cx - inLen * Math.sin(th1);
         const inY = cy - inLen * Math.cos(th1);
         const outX = cx + outLen * Math.sin(th2);
         const outY = cy + outLen * Math.cos(th2);
+
         return (
-          <svg viewBox="0 0 320 220" className="w-full max-w-md mx-auto">
-            <defs>
-              <linearGradient id="mediumGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={m.color} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={m.color} stopOpacity={0.1} />
-              </linearGradient>
-            </defs>
-            {/* ดวงอาทิตย์เป็นแหล่งกำเนิดแสง */}
-            <circle cx={45} cy={28} r={13} fill="#fde047" />
-            {Array.from({ length: 8 }).map((_, i) => {
-              const a = (i * Math.PI) / 4;
-              return (
-                <line
-                  key={i}
-                  x1={45 + 17 * Math.cos(a)}
-                  y1={28 + 17 * Math.sin(a)}
-                  x2={45 + 23 * Math.cos(a)}
-                  y2={28 + 23 * Math.sin(a)}
-                  stroke="#fde047"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                />
-              );
-            })}
-            <rect x={20} y={115} width={280} height={85} fill="url(#mediumGrad)" />
-            <line x1={20} y1={115} x2={300} y2={115} stroke="#475569" strokeWidth={1.5} />
-            <line x1={cx} y1={20} x2={cx} y2={205} stroke="#475569" strokeWidth={1} strokeDasharray="3 3" />
-            <line x1={inX} y1={inY} x2={cx} y2={cy} stroke="#facc15" strokeWidth={2.5} />
-            <line x1={cx} y1={cy} x2={outX} y2={outY} stroke="#22d3ee" strokeWidth={2.5} />
-            <circle cx={cx} cy={cy} r={3} fill="#f8fafc" />
-            <text x={215} y={198} fill="#94a3b8" fontSize={11}>ตัวกลาง: {m.label}</text>
+          <svg viewBox="0 0 360 240" className="w-full max-w-md mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80">
+            {/* ฉากหลังห้องแล็บออปติกส์มืดจริง Photorealistic Optics Lab Background */}
+            <image href="/simulations/optics_lab_bg.png" x="0" y="0" width="360" height="240" preserveAspectRatio="xMidYMid slice" opacity="0.85" />
+            <rect x="0" y="0" width="360" height="240" fill="#000000" fillOpacity="0.3" />
+
+            {/* ขอบเขตปริซึมตัวกลาง */}
+            <rect x={30} y={120} width={300} height={95} fill={m.color} fillOpacity={0.25} stroke={m.color} strokeWidth={2} rx={4} />
+            <line x1={30} y1={120} x2={330} y2={120} stroke="#ffffff" strokeWidth={2.5} />
+
+            {/* กล่องยิงเลเซอร์ */}
+            <rect x={inX - 18} y={inY - 10} width={28} height={16} rx={3} fill="#1e293b" stroke="#facc15" strokeWidth={1.5} />
+            <circle cx={inX - 10} cy={inY - 2} r={3} fill="#ef4444" />
+
+            {/* เส้นฉาก Normal */}
+            <line x1={cx} y1={25} x2={cx} y2={210} stroke="#94a3b8" strokeWidth={1.2} strokeDasharray="4 4" />
+
+            {/* ลำแสงเลเซอร์เข้ม */}
+            <line x1={inX} y1={inY} x2={cx} y2={cy} stroke="#facc15" strokeWidth={3.5} />
+            <line x1={cx} y1={cy} x2={outX} y2={outY} stroke="#22d3ee" strokeWidth={3.5} />
+            <circle cx={cx} cy={cy} r={4.5} fill="#ffffff" stroke="#facc15" strokeWidth={1.5} />
+
+            <text x={cx - 38} y={cy - 25} fill="#facc15" fontSize={11} fontWeight={800} fontFamily="mono">θ₁ = {num("angle")}°</text>
+            <text x={cx + 12} y={cy + 35} fill="#22d3ee" fontSize={11} fontWeight={800} fontFamily="mono">θ₂ = {(th2 / DEG).toFixed(1)}°</text>
+            <text x={220} y={205} fill="#f8fafc" fontSize={11} fontWeight={700}>{m.label} (n = {m.n})</text>
           </svg>
         );
       }
@@ -608,49 +656,44 @@ export default function SimulationPage() {
         const A = num("A");
         const k = num("k");
         const phase = (num("phase") * Math.PI) / 180;
-        const cx = 70;
-        const cy = 110;
-        const r = A * 26;
-        const animSpeed = 1.1; // ความเร็วหมุนสาธิต (คงที่ ไม่ขึ้นกับ k)
+        const cx = 80;
+        const cy = 115;
+        const r = A * 28;
+        const animSpeed = 1.1;
         const theta = phase + (isPlaying ? elapsed * animSpeed : 0);
         const dotX = cx + r * Math.cos(theta);
         const dotY = cy - r * Math.sin(theta);
-        const graphStart = 110;
-        const graphEnd = 310;
+        const graphStart = 125;
+        const graphEnd = 335;
         const pts: string[] = [];
         const n = 80;
         for (let i = 0; i <= n; i++) {
-          const xNorm = (i / n) * 6; // ช่วงที่มองเห็นบนกราฟ (หน่วยเรเดียน x k)
-          const y = cy - A * 26 * Math.sin(k * xNorm + theta);
+          const xNorm = (i / n) * 6;
+          const y = cy - A * 28 * Math.sin(k * xNorm + theta);
           const x = graphStart + (i / n) * (graphEnd - graphStart);
           pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
         }
-        // จุดซ้ายสุดของกราฟ (i=0) มีความสูงเท่ากับกระเช้าบนล้อเป๊ะๆ เพราะ xNorm=0 -> sin(theta) เท่ากัน
-        const curveStartY = cy - A * 26 * Math.sin(theta);
+        const curveStartY = cy - A * 28 * Math.sin(theta);
+
         return (
-          <svg viewBox="0 0 320 220" className="w-full max-w-md mx-auto">
-            {/* ขาตั้งล้อชิงช้าสวรรค์ */}
-            <line x1={cx} y1={cy} x2={cx - 38} y2={195} stroke="#475569" strokeWidth={2} />
-            <line x1={cx} y1={cy} x2={cx + 38} y2={195} stroke="#475569" strokeWidth={2} />
-            <line x1={20} y1={195} x2={320} y2={195} stroke="#334155" strokeWidth={1.5} />
-            {/* ล้อและซี่ล้อ */}
-            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#475569" strokeWidth={1.5} />
-            {Array.from({ length: 8 }).map((_, i) => {
-              const a = (i * Math.PI) / 4;
-              return (
-                <line key={i} x1={cx} y1={cy} x2={cx + r * Math.cos(a)} y2={cy - r * Math.sin(a)} stroke="#33415588" strokeWidth={1} />
-              );
-            })}
-            {/* กระเช้าที่ตำแหน่งปัจจุบัน */}
-            <line x1={cx} y1={cy} x2={dotX} y2={dotY} stroke="#fbbf24" strokeWidth={2} />
-            <rect x={dotX - 6} y={dotY - 6} width={12} height={12} rx={3} fill="#fbbf24" stroke="#92400e" strokeWidth={1} />
-            {/* เส้นประเชื่อมความสูงของกระเช้ากับจุดเริ่มกราฟ (พิสูจน์ว่าเท่ากัน) */}
-            <line x1={dotX} y1={dotY} x2={graphStart} y2={curveStartY} stroke="#fbbf2488" strokeWidth={1} strokeDasharray="3 3" />
-            <circle cx={graphStart} cy={curveStartY} r={4} fill="#fbbf24" />
-            {/* กราฟคลื่นที่ไหลไปตามการหมุนจริง */}
-            <line x1={graphStart} y1={cy} x2={graphEnd} y2={cy} stroke="#334155" strokeWidth={1} />
-            <polyline points={pts.join(" ")} fill="none" stroke="#38bdf8" strokeWidth={2.5} />
-            <text x={graphStart} y={205} fontSize={10} fill="#94a3b8">ความสูงกระเช้า = จุดบนคลื่น (จุดเหลือง)</text>
+          <svg viewBox="0 0 360 230" className="w-full max-w-md mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80">
+            {/* ฉากหลังชิงช้าสวรรค์สวนสนุกจริง Photorealistic Ferris Wheel Background */}
+            <image href="/simulations/ferris_wheel_bg.png" x="0" y="0" width="360" height="230" preserveAspectRatio="xMidYMid slice" opacity="0.85" />
+            <rect x="0" y="0" width="360" height="230" fill="#000000" fillOpacity="0.3" />
+
+            {/* กระเช้าหมุนตามองศา */}
+            <line x1={cx} y1={cy} x2={dotX} y2={dotY} stroke="#fbbf24" strokeWidth={2.5} />
+            <rect x={dotX - 7} y={dotY - 7} width={14} height={14} rx={3} fill="#fbbf24" stroke="#78350f" strokeWidth={1.5} />
+
+            {/* เส้นประเลเซอร์เชื่อมโยงจุดคลื่น */}
+            <line x1={dotX} y1={dotY} x2={graphStart} y2={curveStartY} stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 3" />
+            <circle cx={graphStart} cy={curveStartY} r={5} fill="#fbbf24" stroke="#ffffff" strokeWidth={1.5} />
+
+            {/* กราฟ Sine Wave บนจอ HUD */}
+            <line x1={graphStart} y1={cy} x2={graphEnd} y2={cy} stroke="#64748b" strokeWidth={1.5} />
+            <polyline points={pts.join(" ")} fill="none" stroke="#38bdf8" strokeWidth={3} />
+
+            <text x={graphStart} y={218} fontSize={10} fill="#f8fafc" fontFamily="mono" fontWeight={700}>y = {A} sin({k}x + {num("phase")}°)</text>
           </svg>
         );
       }
@@ -658,25 +701,15 @@ export default function SimulationPage() {
         const t = isPlaying ? elapsed % 10 : num("x0");
         const s = t * t;
         const velocity = 2 * t;
-
-        // แถวที่ 1: ถนน + รถวิ่งจริง (ตำแหน่งตามระยะทางจริง ยิ่งเวลาผ่านยิ่งวิ่งเร็ว)
-        const roadStart = 30;
-        const roadEnd = 300;
-        const roadY = 40;
+        const roadStart = 35;
+        const roadEnd = 320;
+        const roadY = 42;
         const carX = roadStart + Math.min(s / 100, 1) * (roadEnd - roadStart);
 
-        // แถวที่ 2: แถบความเร็ว
-        const barX = 30;
-        const barW = 270;
-        const barY = 68;
-        const barH = 14;
-        const fillW = Math.min(velocity / 20, 1) * barW;
-
-        // แถวที่ 3: กราฟระยะทาง-เวลา พร้อมเส้นสัมผัส
-        const originX = 30;
-        const originY = 205;
-        const scaleX = 27; // px ต่อ 1 วินาที
-        const scaleY = 1.2; // px ต่อ 1 เมตร
+        const originX = 35;
+        const originY = 210;
+        const scaleX = 28;
+        const scaleY = 1.25;
         const toPx = (tt: number) => ({ x: originX + tt * scaleX, y: originY - tt * tt * scaleY });
         const pts: string[] = [];
         for (let tt = 0; tt <= 10; tt += 0.25) {
@@ -685,34 +718,36 @@ export default function SimulationPage() {
         }
         const p0 = toPx(t);
         const slopePxPerPx = (2 * t * scaleY) / scaleX;
-        const dxPx = 40;
+        const dxPx = 45;
         const t1 = { x: p0.x - dxPx, y: p0.y + slopePxPerPx * dxPx };
         const t2 = { x: p0.x + dxPx, y: p0.y - slopePxPerPx * dxPx };
 
         return (
-          <svg viewBox="0 0 320 220" className="w-full max-w-md mx-auto">
-            {/* ถนน + รถ */}
-            <text x={roadStart} y={20} fontSize={10} fill="#94a3b8">รถวิ่งจริง (ยิ่งเวลาผ่าน ยิ่งเร่งเร็วขึ้น)</text>
-            <line x1={roadStart} y1={roadY} x2={roadEnd} y2={roadY} stroke="#334155" strokeWidth={4} strokeLinecap="round" />
-            <text x={carX} y={roadY - 8} fontSize={16} textAnchor="middle">🚗</text>
+          <svg viewBox="0 0 360 235" className="w-full max-w-md mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80">
+            {/* ฉากหลังถนนไฮเวย์จริง Photorealistic Highway Road Background */}
+            <image href="/simulations/asphalt_road_bg.png" x="0" y="0" width="360" height="235" preserveAspectRatio="xMidYMid slice" opacity="0.85" />
 
-            {/* แถบความเร็ว */}
-            <text x={barX} y={barY - 6} fontSize={10} fill="#94a3b8">ความเร็วตอนนี้</text>
-            <rect x={barX} y={barY} width={barW} height={barH} rx={7} fill="#1e293b" stroke="#334155" strokeWidth={1} />
-            <rect x={barX} y={barY} width={fillW} height={barH} rx={7} fill="#f97316" />
-            <text x={barX + barW} y={barY + barH + 12} fontSize={11} fill="#f97316" textAnchor="end" fontWeight={700}>
-              {velocity.toFixed(1)} m/s
-            </text>
+            {/* รถสปอร์ตวิ่งบนถนน */}
+            <g transform={`translate(${carX - 16}, ${roadY - 16})`}>
+              <rect x={0} y={4} width={32} height={12} rx={4} fill="#f97316" stroke="#431407" strokeWidth={1} />
+              <rect x={6} y={0} width={18} height={8} rx={2} fill="#38bdf8" />
+              <circle cx={7} cy={16} r={3.5} fill="#0f172a" stroke="#94a3b8" strokeWidth={1} />
+              <circle cx={25} cy={16} r={3.5} fill="#0f172a" stroke="#94a3b8" strokeWidth={1} />
+            </g>
 
-            {/* กราฟระยะทาง-เวลา */}
-            <text x={originX} y={95} fontSize={10} fill="#94a3b8">กราฟระยะทาง (แกนตั้ง) - เวลา (แกนนอน)</text>
-            <line x1={originX} y1={originY} x2={300} y2={originY} stroke="#334155" strokeWidth={1.5} />
-            <line x1={originX} y1={originY} x2={originX} y2={100} stroke="#334155" strokeWidth={1.5} />
-            <polyline points={pts.join(" ")} fill="none" stroke="#34d399" strokeWidth={2} />
-            <line x1={t1.x} y1={t1.y} x2={t2.x} y2={t2.y} stroke="#f97316" strokeWidth={2.5} />
-            <circle cx={p0.x} cy={p0.y} r={5} fill="#f97316" />
-            <text x={originX + 5} y={originY + 14} fontSize={9} fill="#64748b">0</text>
-            <text x={290} y={originY + 14} fontSize={9} fill="#64748b">10 วิ</text>
+            {/* กราฟ s(t) = t² */}
+            <line x1={originX} y1={originY} x2={325} y2={originY} stroke="#cbd5e1" strokeWidth={1.5} />
+            <line x1={originX} y1={originY} x2={originX} y2={90} stroke="#cbd5e1" strokeWidth={1.5} />
+            <polyline points={pts.join(" ")} fill="none" stroke="#34d399" strokeWidth={3} />
+
+            {/* เส้นสัมผัส Tangent Line */}
+            <line x1={t1.x} y1={t1.y} x2={t2.x} y2={t2.y} stroke="#f97316" strokeWidth={3} />
+            <circle cx={p0.x} cy={p0.y} r={6} fill="#f97316" stroke="#ffffff" strokeWidth={1.5} />
+
+            <g transform="translate(195, 12)">
+              <rect x={0} y={0} width={150} height={28} rx={6} fill="#0f172acc" stroke="#f97316" strokeWidth={1.5} />
+              <text x={75} y={18} fontSize={11} fill="#f97316" fontWeight={800} fontFamily="mono" textAnchor="middle">v = 2t = {velocity.toFixed(1)} m/s</text>
+            </g>
           </svg>
         );
       }
@@ -721,54 +756,39 @@ export default function SimulationPage() {
         const angleDeg = num("sunAngle");
         const angle = angleDeg * DEG;
         const shadowM = h / Math.tan(angle);
-        const groundY = 170;
-        const treeX = 230;
-        const scale = 14; // px ต่อ 1 เมตร สำหรับความสูงต้นไม้
-        const treeTopY = groundY - Math.max(h * scale, 30);
-        const shadowScale = 10; // px ต่อ 1 เมตร สำหรับความยาวเงา (แยกสเกลให้พอดีจอ)
-        const shadowPx = Math.min(shadowM * shadowScale, 210);
+        const groundY = 175;
+        const treeX = 245;
+        const scale = 14;
+        const treeTopY = groundY - Math.max(h * scale, 35);
+        const shadowScale = 10;
+        const shadowPx = Math.min(shadowM * shadowScale, 220);
         const shadowTipX = treeX - shadowPx;
-        // ยิ่งมุมมาก ดวงอาทิตย์ยิ่งอยู่สูง/เข้าใกล้กลางฟ้า
-        const sunX = treeX + 40 + (80 - angleDeg) * 0.6;
-        const sunY = 20 + (80 - angleDeg) * 1.4;
+        const sunX = treeX + 45 + (80 - angleDeg) * 0.65;
+        const sunY = 20 + (80 - angleDeg) * 1.35;
+
         return (
-          <svg viewBox="0 0 320 200" className="w-full max-w-md mx-auto">
-            <defs>
-              <linearGradient id="shadowGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#0f172a" stopOpacity={0.05} />
-                <stop offset="100%" stopColor="#0f172a" stopOpacity={0.55} />
-              </linearGradient>
-            </defs>
-            <line x1={10} y1={groundY} x2={310} y2={groundY} stroke="#334155" strokeWidth={2} />
-            {/* ดวงอาทิตย์ */}
-            <circle cx={sunX} cy={sunY} r={12} fill="#fde047" />
-            {Array.from({ length: 8 }).map((_, i) => {
-              const a = (i * Math.PI) / 4;
-              return (
-                <line
-                  key={i}
-                  x1={sunX + 16 * Math.cos(a)}
-                  y1={sunY + 16 * Math.sin(a)}
-                  x2={sunX + 22 * Math.cos(a)}
-                  y2={sunY + 22 * Math.sin(a)}
-                  stroke="#fde047"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                />
-              );
-            })}
-            {/* รังสีแสงจากดวงอาทิตย์ผ่านยอดต้นไม้ไปจรดปลายเงา */}
-            <line x1={sunX} y1={sunY} x2={treeX} y2={treeTopY} stroke="#fde04799" strokeWidth={1.5} strokeDasharray="3 3" />
-            <line x1={treeX} y1={treeTopY} x2={shadowTipX} y2={groundY} stroke="#fde04799" strokeWidth={1.5} strokeDasharray="3 3" />
-            {/* เงาบนพื้น */}
-            <rect x={shadowTipX} y={groundY - 4} width={treeX - shadowTipX} height={4} fill="url(#shadowGrad)" />
-            {/* ต้นไม้ */}
-            <line x1={treeX} y1={groundY} x2={treeX} y2={treeTopY + 14} stroke="#78350f" strokeWidth={4} />
-            <text x={treeX} y={treeTopY + 6} fontSize={30} textAnchor="middle">🌳</text>
-            {/* ป้ายบอกความยาวเงา */}
-            <text x={(shadowTipX + treeX) / 2} y={groundY + 16} fontSize={11} fill="#a3e635" textAnchor="middle" fontWeight={700}>
-              เงายาว {shadowM.toFixed(1)} ม.
-            </text>
+          <svg viewBox="0 0 360 220" className="w-full max-w-md mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80">
+            {/* ฉากหลังสวนสาธารณะจริง Photorealistic Sunny Park Background */}
+            <image href="/simulations/sunny_park_bg.png" x="0" y="0" width="360" height="220" preserveAspectRatio="xMidYMid slice" opacity="0.9" />
+
+            {/* ดวงอาทิตย์พร้อมรัศมีแสง */}
+            <circle cx={sunX} cy={sunY} r={14} fill="#fde047" stroke="#ffffff" strokeWidth={1.5} />
+            <line x1={sunX} y1={sunY} x2={treeX} y2={treeTopY} stroke="#fde047" strokeWidth={1.5} strokeDasharray="4 3" />
+            <line x1={treeX} y1={treeTopY} x2={shadowTipX} y2={groundY} stroke="#fde047" strokeWidth={1.5} strokeDasharray="4 3" />
+
+            {/* เงาทอดสมจริงบนพื้น */}
+            <rect x={shadowTipX} y={groundY - 3} width={treeX - shadowTipX} height={6} fill="#0f172a" fillOpacity={0.65} rx={3} />
+
+            {/* ต้นไม้ 3D Canopy */}
+            <line x1={treeX} y1={groundY} x2={treeX} y2={treeTopY + 16} stroke="#78350f" strokeWidth={5} strokeLinecap="round" />
+            <circle cx={treeX} cy={treeTopY + 10} r={22} fill="#15803d" stroke="#14532d" strokeWidth={1} />
+            <circle cx={treeX - 10} cy={treeTopY + 4} r={16} fill="#22c55e" stroke="#14532d" strokeWidth={1} />
+            <circle cx={treeX + 10} cy={treeTopY + 4} r={16} fill="#16a34a" stroke="#14532d" strokeWidth={1} />
+
+            <g transform={`translate(${(shadowTipX + treeX) / 2 - 45}, 182)`}>
+              <rect x={0} y={0} width={90} height={20} rx={5} fill="#0f172acc" stroke="#a3e635" strokeWidth={1.5} />
+              <text x={45} y={14} fontSize={10} fill="#a3e635" textAnchor="middle" fontWeight={800}>เงายาว {shadowM.toFixed(1)} ม.</text>
+            </g>
           </svg>
         );
       }
@@ -777,34 +797,39 @@ export default function SimulationPage() {
         rolls.forEach((r) => counts[r - 1]++);
         const total = rolls.length;
         const lastRoll = rolls[rolls.length - 1];
-        const groundY = 180;
-        const maxBarH = 130;
-        const expectedY = groundY - maxBarH / 6; // เส้นอ้างอิง 1/6 ของทั้งหมด (คงที่เสมอ)
-        const barW = 32;
-        const gap = 12;
-        const startX = 30;
+        const groundY = 185;
+        const maxBarH = 135;
+        const expectedY = groundY - maxBarH / 6;
+        const barW = 34;
+        const gap = 14;
+        const startX = 35;
+
         return (
-          <svg viewBox="0 0 320 220" className="w-full max-w-md mx-auto">
-            {/* ลูกเต๋าขนาดใหญ่แสดงค่าที่สุ่มได้ล่าสุด */}
-            <g transform="translate(20,10)">
-              <rect x={0} y={0} width={40} height={40} rx={9} fill="#1e293b" stroke="#475569" strokeWidth={1.5} />
+          <svg viewBox="0 0 360 230" className="w-full max-w-md mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700/80">
+            {/* ฉากหลังโต๊ะคาสิโนจริง Photorealistic Casino Felt Table Background */}
+            <image href="/simulations/casino_dice_bg.png" x="0" y="0" width="360" height="230" preserveAspectRatio="xMidYMid slice" opacity="0.85" />
+            <rect x="0" y="0" width="360" height="230" fill="#000000" fillOpacity="0.25" />
+
+            {/* ลูกเต๋า 3D */}
+            <g transform="translate(25,12)">
+              <rect x={0} y={0} width={42} height={42} rx={10} fill="#1e293b" stroke="#ffffff" strokeWidth={2} />
               {lastRoll ? (
-                <g transform="scale(1.18)">
+                <g transform="scale(1.24)">
                   <DicePips value={lastRoll} />
                 </g>
               ) : (
-                <text x={20} y={26} textAnchor="middle" fontSize={18} fill="#64748b">?</text>
+                <text x={21} y={28} textAnchor="middle" fontSize={20} fill="#f8fafc" fontWeight={700}>?</text>
               )}
             </g>
-            <text x={72} y={26} fontSize={11} fill="#94a3b8">สุ่มไปแล้ว {total} ครั้ง</text>
-            <text x={72} y={40} fontSize={10} fill="#64748b">ทอยล่าสุด: {lastRoll ?? "-"}</text>
+            <text x={80} y={28} fontSize={12} fill="#f8fafc" fontWeight={700}>สุ่มไปแล้ว {total} ครั้ง</text>
+            <text x={80} y={44} fontSize={11} fill="#cbd5e1">ทอยล่าสุด: <strong className="text-amber-400">{lastRoll ?? "-"}</strong></text>
 
-            {/* เส้นอ้างอิง 1/6 */}
-            <line x1={startX} y1={expectedY} x2={300} y2={expectedY} stroke="#f43f5e" strokeWidth={1} strokeDasharray="4 3" />
-            <text x={300} y={expectedY - 5} fontSize={9} fill="#fb7185" textAnchor="end">ค่าคาดหวัง (1/6)</text>
-            <line x1={startX} y1={groundY} x2={300} y2={groundY} stroke="#334155" strokeWidth={1.5} />
+            {/* เส้นอ้างอิงทางทฤษฎี (1/6) */}
+            <line x1={startX} y1={expectedY} x2={340} y2={expectedY} stroke="#fb7185" strokeWidth={1.5} strokeDasharray="4 3" />
+            <text x={340} y={expectedY - 5} fontSize={10} fill="#fb7185" textAnchor="end" fontWeight={800}>ค่าคาดหวัง (16.7%)</text>
+            <line x1={startX} y1={groundY} x2={340} y2={groundY} stroke="#f8fafc" strokeWidth={2} />
 
-            {/* แท่งกราฟความถี่ของแต่ละหน้า 1-6 */}
+            {/* แท่งกราฟความถี่ 3D Bar */}
             {counts.map((c, i) => {
               const frac = total > 0 ? c / total : 0;
               const h = frac * maxBarH;
@@ -813,12 +838,12 @@ export default function SimulationPage() {
               const pct = total > 0 ? Math.round(frac * 100) : 0;
               return (
                 <g key={i}>
-                  <rect x={x} y={y} width={barW} height={h} rx={4} fill={lastRoll === i + 1 ? "#fb7185" : "#38bdf8"} fillOpacity={0.85} />
-                  <text x={x + barW / 2} y={groundY + 16} fontSize={11} fill="#e2e8f0" textAnchor="middle" fontWeight={700}>
+                  <rect x={x} y={y} width={barW} height={h} rx={5} fill={lastRoll === i + 1 ? "#fb7185" : "#38bdf8"} fillOpacity={0.9} stroke="#ffffff" strokeWidth={1} />
+                  <text x={x + barW / 2} y={groundY + 18} fontSize={12} fill="#ffffff" textAnchor="middle" fontWeight={800}>
                     {i + 1}
                   </text>
                   {total > 0 && (
-                    <text x={x + barW / 2} y={y - 5} fontSize={9} fill="#94a3b8" textAnchor="middle">
+                    <text x={x + barW / 2} y={y - 6} fontSize={10} fill="#f8fafc" textAnchor="middle" fontFamily="mono" fontWeight={700}>
                       {pct}%
                     </text>
                   )}
@@ -836,77 +861,156 @@ export default function SimulationPage() {
   const computed = getComputed();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+      
+      {/* Background Decorative Ambient Glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-sky-500/10 via-orange-500/10 to-purple-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-sky-400 text-xs font-bold mb-2">
-              <Cpu className="w-4 h-4" />
-              Interactive Simulation Hub
+      <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+
+        {/* Dynamic Hero Header Banner */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/60 p-6 sm:p-8 rounded-3xl border border-slate-800/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 blur-3xl rounded-full pointer-events-none" />
+          
+          <div className="space-y-3 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-sky-400 text-xs font-bold shadow-inner">
+              <Cpu className="w-4 h-4 text-sky-400 animate-pulse" />
+              <span>Interactive Simulation Hub</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+              <span className="text-slate-400 font-normal">Active Learning Engine</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              ห้องปฏิบัติการจำลอง <span className="text-sky-400">3D Interactive</span>
+            
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+              ห้องปฏิบัติการจำลอง{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-amber-400 to-orange-400">
+                3D Interactive
+              </span>
             </h1>
-            <p className="text-slate-400 text-sm mt-1">
-              ทดลองปรับตัวแปรทางฟิสิกส์และคณิตศาสตร์เพื่อสังเกตผลลัพธ์แบบเรียลไทม์ จากสิ่งรอบตัวในชีวิตประจำวัน
+            
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+              ทดลองปรับตัวแปรทางฟิสิกส์และคณิตศาสตร์เพื่อสังเกตผลลัพธ์แบบเรียลไทม์ เชื่อมโยงปรากฏการณ์จริงรอบตัวในชีวิตประจำวันสำหรับนักเรียน ม.ปลาย
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-mono flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              WebGL Ready Frame
-            </span>
+          {/* Quick Telemetry Summary Pill */}
+          <div className="flex flex-wrap md:flex-col items-start md:items-end gap-3 shrink-0">
+            <div className="px-4 py-2 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-slate-300 text-xs font-mono flex items-center gap-2.5 shadow-lg backdrop-blur-md">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-md shadow-emerald-400/50" />
+              <span>Physics Vector Engine</span>
+              <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">READY</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-400 text-xs flex items-center gap-1.5">
+                <FlaskConical className="w-3.5 h-3.5 text-orange-400" />
+                <span>8 การทดลอง</span>
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Preset Cards Selector Bar */}
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-orange-400" />
-            เลือกแบบจำลองการทดลอง (Presets)
-          </h2>
+        {/* Preset Selector Container with Subject Filters */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-orange-400" />
+              <span>เลือกแบบจำลองการทดลอง (Presets)</span>
+              <span className="px-2 py-0.5 text-[11px] rounded-full bg-slate-800 text-slate-400 font-mono">
+                {filteredPresets.length}
+              </span>
+            </h2>
+
+            {/* Category Tabs Filter */}
+            <div className="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800/80 text-xs">
+              <button
+                onClick={() => setActiveSubject("all")}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                  activeSubject === "all"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                ทั้งหมด (8)
+              </button>
+              <button
+                onClick={() => setActiveSubject("ฟิสิกส์")}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                  activeSubject === "ฟิสิกส์"
+                    ? "bg-sky-500/20 text-sky-400 border border-sky-500/30 shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Atom className="w-3.5 h-3.5" />
+                <span>ฟิสิกส์ (4)</span>
+              </button>
+              <button
+                onClick={() => setActiveSubject("คณิตศาสตร์")}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
+                  activeSubject === "คณิตศาสตร์"
+                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <MathIcon className="w-3.5 h-3.5" />
+                <span>คณิตศาสตร์ (4)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Preset Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {presets.map((preset) => {
+            {filteredPresets.map((preset) => {
               const isSelected = activePreset.id === preset.id;
               return (
                 <button
                   key={preset.id}
                   onClick={() => handleSelectPreset(preset)}
-                  className={`group p-4 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between hover:-translate-y-0.5 ${
+                  className={`group p-4 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between relative overflow-hidden ${
                     isSelected
-                      ? "bg-slate-900 border-sky-500 shadow-lg shadow-sky-500/10 ring-2 ring-sky-500/30"
-                      : "bg-slate-900/60 border-slate-800 hover:bg-slate-900 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20"
+                      ? "bg-slate-900 border-sky-500/80 shadow-xl shadow-sky-500/10 ring-2 ring-sky-500/40 -translate-y-1"
+                      : "bg-slate-900/50 border-slate-800/80 hover:bg-slate-900/90 hover:border-slate-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40"
                   }`}
+                  style={{
+                    boxShadow: isSelected ? `0 10px 30px -10px ${preset.glowColor}` : undefined,
+                  }}
                 >
+                  {/* Subtle active background gradient */}
+                  {isSelected && (
+                    <div
+                      className="absolute inset-0 pointer-events-none opacity-20"
+                      style={{
+                        background: `radial-gradient(circle at top right, ${preset.glowColor}, transparent 70%)`,
+                      }}
+                    />
+                  )}
+
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <div
-                        className={`w-11 h-11 rounded-2xl flex items-center justify-center text-2xl border transition-transform group-hover:scale-105 ${preset.iconColor}`}
+                        className={`w-11 h-11 rounded-2xl flex items-center justify-center text-2xl border transition-all duration-300 group-hover:scale-110 shadow-md ${preset.iconColor}`}
                       >
                         <span aria-hidden>{preset.emoji}</span>
                       </div>
-                      {isSelected ? (
-                        <ChevronRight className="w-4 h-4 text-sky-400 shrink-0" />
-                      ) : (
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${preset.iconColor}`}>
-                          {preset.subject}
-                        </span>
-                      )}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${preset.badgeBg}`}>
+                        {preset.subject}
+                      </span>
                     </div>
-                    <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">
+
+                    <h3 className="text-sm font-bold text-white mb-1 line-clamp-1 group-hover:text-sky-300 transition-colors">
                       {preset.name}
                     </h3>
+                    
                     <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
                       {preset.description}
                     </p>
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center gap-1.5 text-[10px] text-slate-500">
-                    <span className="shrink-0">ตัวอย่างจริง:</span>
-                    <span className="text-slate-300 line-clamp-1">{preset.everyday}</span>
+                  <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400">
+                    <span className="truncate pr-2">📍 {preset.everyday}</span>
+                    {isSelected ? (
+                      <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0 animate-pulse" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-300 transition-colors shrink-0" />
+                    )}
                   </div>
                 </button>
               );
@@ -914,82 +1018,105 @@ export default function SimulationPage() {
           </div>
         </div>
 
-        {/* Main Work Area: Viewer Frame + Control Panel */}
+        {/* Main Work Area: Visualizer Studio Frame + Control Panel */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Canvas Viewer Frame (2 Cols) */}
+          {/* Canvas Visualizer Studio Frame (2 Cols) */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="relative rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden shadow-2xl min-h-[420px] flex flex-col justify-between p-6">
+            <div className="relative rounded-3xl bg-slate-900/90 border border-slate-800/90 overflow-hidden shadow-2xl min-h-[460px] flex flex-col justify-between p-5 sm:p-6 backdrop-blur-xl">
 
-              {/* Tech Background Grid Lines */}
-              <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-25 pointer-events-none" />
+              {/* High-Tech Background Grid Lines */}
+              <div className="absolute inset-0 bg-[radial-gradient(#334155_1.2px,transparent_1.2px)] [background-size:24px_24px] opacity-20 pointer-events-none" />
 
-              {/* Canvas Top Status Bar */}
-              <div className="relative z-10 flex items-center justify-between bg-slate-950/80 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-md">
+              {/* Viewport Top Header Toolbar */}
+              <div className="relative z-10 flex items-center justify-between bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800/80 backdrop-blur-md shadow-md">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl border ${activePreset.iconColor}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl border shadow-inner ${activePreset.iconColor}`}>
                     <span aria-hidden>{activePreset.emoji}</span>
                   </div>
                   <div>
-                    <h4 className="text-xs font-extrabold text-white">{activePreset.name}</h4>
-                    <p className="text-[10px] text-slate-400 font-mono">ตัวอย่างจริง: {activePreset.everyday}</p>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-extrabold text-white">{activePreset.name}</h4>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold border ${activePreset.badgeBg}`}>
+                        {activePreset.subject}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">สิ่งรอบตัว: {activePreset.everyday}</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                    {isPlaying ? "STATUS: RUNNING" : "STATUS: PAUSED"}
+                  <span className={`px-3 py-1 rounded-xl text-[10px] font-mono font-bold flex items-center gap-2 border transition-all ${
+                    isPlaying
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                      : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${isPlaying ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`} />
+                    {isPlaying ? "LIVE ANIMATION" : "PAUSED"}
                   </span>
                 </div>
               </div>
 
-              {/* Center Live Visual */}
-              <div className="relative z-10 my-6 flex-1 flex items-center justify-center">
-                {renderVisual()}
+              {/* Center Canvas Live Visualizer Display (Real-Life Photorealistic Engine) */}
+              <div className="relative z-10 my-6 flex-1 flex items-center justify-center p-2">
+                <div className="w-full flex items-center justify-center">
+                  {renderVisual()}
+                </div>
               </div>
 
-              {/* Explanation Box */}
-              <div className="relative z-10 bg-slate-950/90 p-4 rounded-2xl border border-slate-800 text-slate-300 text-xs shadow-xl space-y-1">
-                <p className="font-bold text-sky-400">คำอธิบาย</p>
-                <p className="text-[11px] text-slate-300 leading-relaxed">{computed.explain}</p>
-                <p className="text-[10px] text-slate-500 pt-1">พื้นฐานที่ควรสังเกต: {activePreset.observation}</p>
+              {/* Live Explanation & Observation Box */}
+              <div className="relative z-10 bg-slate-950/90 p-4 rounded-2xl border border-slate-800/80 text-slate-300 text-xs shadow-xl space-y-2 backdrop-blur-md">
+                <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
+                  <div className="flex items-center gap-2 font-bold text-sky-400">
+                    <BookOpen className="w-4 h-4 text-sky-400" />
+                    <span>คำอธิบายปรากฏการณ์ & การคำนวณ</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">Realtime Math Engine</span>
+                </div>
+                <p className="text-xs text-slate-200 leading-relaxed font-sans">{computed.explain}</p>
+                <div className="pt-1.5 border-t border-slate-800/40 flex items-start gap-2 text-[11px] text-slate-400">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <span><strong>จุดสังเกตหลักสูตร:</strong> {activePreset.observation}</span>
+                </div>
               </div>
 
-              {/* Canvas Bottom Interactive Control Bar */}
-              <div className="relative z-10 mt-4 flex flex-wrap items-center justify-between gap-3 bg-slate-950/90 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-md">
+              {/* Bottom Telemetry Controls & Live Output Indicators */}
+              <div className="relative z-10 mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-950/90 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-md">
 
-                {/* Play / Pause Toggle Button */}
+                {/* Main Action Buttons */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsPlaying(!isPlaying)}
-                    className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-md ${
+                    className={`px-5 py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 ${
                       isPlaying
-                        ? "bg-amber-500 text-slate-950 hover:bg-amber-400"
-                        : "bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 hover:opacity-95 shadow-orange-500/20"
+                        ? "bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-amber-500/20"
+                        : "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 hover:opacity-95 shadow-orange-500/25"
                     }`}
                   >
-                    <Play className="w-4 h-4 fill-current stroke-[2]" />
+                    {isPlaying ? <Pause className="w-4 h-4 fill-current stroke-[2]" /> : <Play className="w-4 h-4 fill-current stroke-[2]" />}
                     <span>{isPlaying ? "หยุดชั่วคราว (Pause)" : "เริ่มการจำลอง (Play)"}</span>
                   </button>
 
                   <button
                     onClick={handleResetParams}
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                    className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-all hover:text-white active:scale-95"
                     title="รีเซ็ตค่าเริ่มต้น"
                   >
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* Stats Mock Buttons */}
-                <div className="flex items-center gap-1.5 text-xs flex-wrap">
+                {/* Live Stats Telemetry Pills */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
                   {computed.stats.map((s, i) => (
-                    <span
+                    <div
                       key={i}
-                      className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs shrink-0 flex items-center gap-2 shadow-inner"
                     >
                       <Eye className="w-3.5 h-3.5 text-sky-400" />
-                      <span>{s.label}: <strong className="text-white">{s.value}</strong></span>
-                    </span>
+                      <span className="text-slate-400">{s.label}:</span>
+                      <strong className="text-white font-mono text-xs">{s.value}</strong>
+                    </div>
                   ))}
                 </div>
 
@@ -998,35 +1125,43 @@ export default function SimulationPage() {
             </div>
           </div>
 
-          {/* Control Panel (1 Col) */}
+          {/* Control Panel Sidebar (1 Col) */}
           <div className="space-y-6">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+            <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 shadow-2xl space-y-6 backdrop-blur-xl">
 
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              {/* Panel Header */}
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
                 <div className="flex items-center gap-2">
-                  <Sliders className="w-5 h-5 text-orange-400" />
-                  <h3 className="text-base font-extrabold text-white">แผงควบคุมตัวแปร</h3>
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center">
+                    <Sliders className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-white">แผงควบคุมตัวแปร</h3>
+                    <p className="text-[10px] text-slate-400">ปรับแต่งค่าเพื่อดูผลลัพธ์แบบเรียลไทม์</p>
+                  </div>
                 </div>
+
                 <button
                   onClick={handleResetParams}
-                  className="text-xs font-bold text-orange-400 hover:underline"
+                  className="text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors hover:underline flex items-center gap-1"
                 >
-                  คืนค่าเดิม
+                  <RotateCcw className="w-3 h-3" />
+                  <span>คืนค่าเดิม</span>
                 </button>
               </div>
 
-              {/* Params Form UI */}
+              {/* Dynamic Parameter Controllers */}
               <div className="space-y-5">
                 {activePreset.params.map((p) =>
                   p.type === "slider" ? (
-                    <div key={p.key} className="space-y-2">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-slate-300">{p.label}</span>
-                        <span className="text-sky-400 font-mono">
+                    <div key={p.key} className="space-y-2 bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/60">
+                      <div className="flex justify-between items-center text-xs font-bold">
+                        <span className="text-slate-200">{p.label}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/30 font-mono text-xs">
                           {paramValues[p.key]} {p.unit}
                         </span>
                       </div>
+
                       <input
                         type="range"
                         min={p.min}
@@ -1034,30 +1169,32 @@ export default function SimulationPage() {
                         step={p.step}
                         value={num(p.key)}
                         onChange={(e) => setParam(p.key, parseFloat(e.target.value))}
-                        className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                        className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-orange-500 focus:outline-none"
                       />
-                      <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                        <span>{p.min}</span>
-                        <span>{p.max}</span>
+
+                      <div className="flex justify-between text-[10px] text-slate-400 font-mono pt-0.5">
+                        <span>Min: {p.min}</span>
+                        <span>Max: {p.max}</span>
                       </div>
                     </div>
                   ) : (
-                    <div key={p.key} className="space-y-2">
-                      <span className="text-xs font-bold text-slate-300 block">{p.label}</span>
-                      <div className="flex flex-wrap gap-1.5">
+                    <div key={p.key} className="space-y-2.5 bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/60">
+                      <span className="text-xs font-bold text-slate-200 block">{p.label}</span>
+                      <div className="flex flex-col gap-1.5">
                         {p.options.map((opt) => {
                           const isSel = str(p.key) === opt.value;
                           return (
                             <button
                               key={opt.value}
                               onClick={() => setParam(p.key, opt.value)}
-                              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
+                              className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-between ${
                                 isSel
-                                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 border-transparent"
-                                  : "bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700"
+                                  ? "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 border-transparent shadow-md font-extrabold"
+                                  : "bg-slate-900 text-slate-300 border-slate-800/80 hover:bg-slate-800 hover:border-slate-700"
                               }`}
                             >
-                              {opt.label}
+                              <span>{opt.label}</span>
+                              {isSel && <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />}
                             </button>
                           );
                         })}
@@ -1067,19 +1204,31 @@ export default function SimulationPage() {
                 )}
               </div>
 
-              {/* State Values Display Card */}
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                  <Activity className="w-3.5 h-3.5 text-orange-400" />
-                  <span>ค่าตัวแปรใน State ปัจจุบัน:</span>
+              {/* Live State Variables Inspection Box */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800/90 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-3.5 h-3.5 text-orange-400" />
+                    <span>State Telemetry Inspector</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-mono">ACTIVE</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-900 text-xs font-mono text-emerald-400 space-y-1">
+
+                <div className="p-3 rounded-xl bg-slate-900/90 text-xs font-mono text-emerald-400 space-y-1.5 border border-slate-800">
                   {activePreset.params.map((p) => (
-                    <p key={p.key}>
-                      {p.key}: {paramValues[p.key]} {p.type === "slider" ? p.unit : ""}
-                    </p>
+                    <div key={p.key} className="flex justify-between items-center text-[11px]">
+                      <span className="text-slate-400">{p.key}:</span>
+                      <span className="text-emerald-400 font-bold">
+                        {paramValues[p.key]} {p.type === "slider" ? p.unit : ""}
+                      </span>
+                    </div>
                   ))}
-                  <p className="text-slate-500 text-[10px] pt-1">isPlaying: {isPlaying ? "true" : "false"}</p>
+                  <div className="pt-1 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-400">
+                    <span>isPlaying:</span>
+                    <span className={isPlaying ? "text-emerald-400" : "text-amber-400"}>
+                      {isPlaying ? "true" : "false"}
+                    </span>
+                  </div>
                 </div>
               </div>
 
