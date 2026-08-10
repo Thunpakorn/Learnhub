@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, Filter } from "lucide-react";
 
 /**
@@ -132,7 +132,10 @@ const mockKnowledgeCards: KnowledgeCard[] = [
 export default function DiscoveryPage() {
   // useState สำหรับเก็บค่าข้อความค้นหาที่ผู้ใช้พิมพ์
   const [searchQuery, setSearchQuery] = useState<string>("");
-  
+  const [searchResult, setSearchResult] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+
   // useState สำหรับเก็บหมวดวิชาที่เลือกกรอง
   const [selectedSubject, setSelectedSubject] = useState<string>("ทั้งหมด");
 
@@ -156,6 +159,41 @@ export default function DiscoveryPage() {
     return matchSubject && matchQuery;
   });
 
+  const handleSearch = async (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchError("โปรดพิมพ์คำค้นหาก่อนกดค้นหา");
+      setSearchResult(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+    setSearchResult(null);
+
+    try {
+      const response = await fetch("/api/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "ไม่สามารถค้นหาได้");
+      }
+
+      setSearchResult(data.result ?? "ไม่มีผลลัพธ์");
+    } catch (error) {
+      setSearchError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-10">
@@ -176,35 +214,60 @@ export default function DiscoveryPage() {
 
         {/* Search Bar UI Section */}
         <div className="max-w-2xl mx-auto">
-          <div className="relative group">
+          <form onSubmit={handleSearch} className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 rounded-3xl blur-md opacity-40 group-hover:opacity-75 transition duration-300 pointer-events-none" />
             
-            <div className="relative flex items-center bg-slate-900/90 border border-slate-700/80 rounded-2xl p-2 shadow-2xl backdrop-blur-xl">
-              <Search className="w-6 h-6 text-slate-400 ml-3 shrink-0" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ลองพิมพ์สิ่งที่คุณสนใจ เช่น กีตาร์, ผึ้ง, บาสเกตบอล, รุ้งกินน้ำ..."
-                className="w-full bg-transparent px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none text-base font-medium"
-              />
-              {searchQuery && (
+            <div className="relative flex flex-col sm:flex-row items-stretch bg-slate-900/90 border border-slate-700/80 rounded-2xl p-2 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center w-full sm:w-auto">
+                <Search className="w-6 h-6 text-slate-400 ml-3 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="ลองพิมพ์สิ่งที่คุณสนใจ เช่น กีตาร์, ผึ้ง, บาสเกตบอล, รุ้งกินน้ำ..."
+                  className="w-full bg-transparent px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none text-base font-medium"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 mt-2 sm:mt-0 sm:ml-2">
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSearchResult(null);
+                      setSearchError(null);
+                    }}
+                    className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 hover:text-white"
+                  >
+                    ล้างคำค้น
+                  </button>
+                )}
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="px-3 py-1 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 hover:text-white mr-2"
+                  type="submit"
+                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold text-sm shadow-md shadow-orange-500/20 hover:opacity-95 transition-all flex items-center gap-1.5"
                 >
-                  ล้างคำค้น
+                  <Sparkles className="w-4 h-4 stroke-[2.5]" />
+                  <span className="hidden sm:inline">ค้นหา</span>
                 </button>
-              )}
-              <button
-                type="button"
-                className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold text-sm shadow-md shadow-orange-500/20 hover:opacity-95 transition-all shrink-0 flex items-center gap-1.5"
-              >
-                <Sparkles className="w-4 h-4 stroke-[2.5]" />
-                <span className="hidden sm:inline">ค้นหา</span>
-              </button>
+              </div>
             </div>
-          </div>
+          </form>
+
+          {isSearching || searchError || searchResult ? (
+            <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-lg shadow-slate-950/20">
+              {isSearching ? (
+                <p className="text-slate-300">กำลังค้นหาคำตอบจาก AI...</p>
+              ) : searchError ? (
+                <p className="text-rose-300">{searchError}</p>
+              ) : searchResult ? (
+                <div>
+                  <h2 className="text-white text-lg font-semibold mb-3">ผลลัพธ์การค้นหาจาก AI</h2>
+                  <p className="whitespace-pre-line text-slate-200 leading-relaxed">{searchResult}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Quick Search Suggestion Pills */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-xs">

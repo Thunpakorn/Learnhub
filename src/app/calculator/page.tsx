@@ -2,7 +2,139 @@
 
 import { useState } from "react";
 import { Calculator as CalcIcon, Delete, RotateCcw, Sparkles, HelpCircle, Info } from "lucide-react";
-import { evaluate, format } from "mathjs";
+import { evaluate, format, parse, MathNode } from "mathjs";
+
+type AngleMode = "DEG" | "RAD";
+
+/**
+ * สร้าง scope object สำหรับส่งเข้า math.js evaluate()
+ * เมื่อโหมดเป็น DEG จะ override ฟังก์ชัน sin/cos/tan ให้แปลงองศาเป็นเรเดียนก่อนคำนวณ
+ * (ทำผ่าน scope แทนการแก้ไขข้อความสมการ เพื่อไม่ให้เกิดปัญหากับวงเล็บซ้อนหลายชั้น)
+ *
+ * @param mode โหมดมุมปัจจุบัน ("DEG" หรือ "RAD")
+ * @returns scope object พร้อมส่งเข้า evaluate(expr, scope)
+ */
+function getAngleScope(mode: AngleMode): Record<string, (x: number) => number> {
+  if (mode === "RAD") {
+    // โหมด RAD ใช้ค่า default ของ math.js ตรงๆ ไม่ต้อง override อะไร
+    return {};
+  }
+  return {
+    sin: (x: number) => Math.sin((x * Math.PI) / 180),
+    cos: (x: number) => Math.cos((x * Math.PI) / 180),
+    tan: (x: number) => Math.tan((x * Math.PI) / 180),
+  };
+}
+
+/**
+ * โครงสร้างข้อมูลของ 1 ขั้นตอนการคำนวณ ใช้แสดงใน panel "ดูวิธีคิด"
+ */
+type CalculationStep = {
+  id: string;
+  expression: string; // ส่วนของสมการที่คำนวณในขั้นนี้ เช่น "sin(30)"
+  result: string; // ผลลัพธ์ของขั้นนี้ เช่น "0.5"
+  description: string; // คำอธิบายภาษาไทยว่าทำไมต้องคิดขั้นนี้
+};
+
+// พจนานุกรมแปลชื่อฟังก์ชัน/ตัวดำเนินการของ math.js เป็นคำอธิบายภาษาไทย
+const FUNCTION_LABELS: Record<string, string> = {
+  sin: "คำนวณค่าไซน์ (sin)",
+  cos: "คำนวณค่าโคไซน์ (cos)",
+  tan: "คำนวณค่าแทนเจนต์ (tan)",
+  log10: "คำนวณลอการิทึม ฐาน 10",
+  log: "คำนวณลอการิทึมธรรมชาติ (ln)",
+  sqrt: "คำนวณรากที่สอง",
+  factorial: "คำนวณแฟกทอเรียล",
+};
+
+const OPERATOR_LABELS: Record<string, string> = {
+  "+": "บวก",
+  "-": "ลบ",
+  "*": "คูณ (ทำก่อนบวก/ลบ ตามลำดับการดำเนินการ)",
+  "/": "หาร (ทำก่อนบวก/ลบ ตามลำดับการดำเนินการ)",
+  "^": "ยกกำลัง (ทำก่อนคูณ/หาร ตามลำดับการดำเนินการ)",
+};
+
+/**
+ * เดินตามต้นไม้โครงสร้างสมการ (Expression Tree) ของ math.js แบบ post-order
+ * (ประมวลผลกิ่งในสุด/วงเล็บก่อน) เพื่อสร้างรายการขั้นตอนการคำนวณทีละขั้น
+ * ตรงกับลำดับการคำนวณจริงตามหลัก BODMAS ที่ math.js parser จัดลำดับไว้ให้แล้ว
+ *
+ * @param node ต้นไม้โครงสร้างสมการจาก math.parse()
+ * @param steps อาเรย์ที่สะสมผลลัพธ์แต่ละขั้น (ส่งต่อแบบ mutate เพื่อความง่าย)
+ * @returns ผลลัพธ์ตัวเลขของกิ่งนี้ (ใช้ให้กิ่งแม่เรียกต่อ)
+ */
+function walkAndCollectSteps(
+  node: MathNode,
+  steps: CalculationStep[],
+  scope: Record<string, unknown>
+): number {
+  // FunctionNode คือฟังก์ชัน เช่น sin(30), sqrt(16)
+  if (node.type === "FunctionNode") {
+    const fnNode = node as unknown as { fn: { name: string }; args: MathNode[] };
+    const fnName = fnNode.fn.name;
+    const argValues = fnNode.args.map((arg) => walkAndCollectSteps(arg, steps, scope));
+    const value = evaluate(node.toString(), scope);
+
+    steps.push({
+      id: `step-${steps.length}`,
+      expression: `${fnName}(${argValues.join(", ")})`,
+      result: formatResult(value),
+      description: FUNCTION_LABELS[fnName] ?? `คำนวณฟังก์ชัน ${fnName}`,
+    });
+
+    return typeof value === "number" ? value : Number(value);
+  }
+
+  // OperatorNode คือตัวดำเนินการ เช่น +, -, *, /, ^
+  if (node.type === "OperatorNode") {
+    const opNode = node as unknown as { op: string; args: MathNode[] };
+    const leftVal = walkAndCollectSteps(opNode.args[0], steps, scope);
+
+    // ตัวดำเนินการเอกภาค (unary) เช่น เครื่องหมายลบหน้าตัวเลข -5 มีแค่ args เดียว
+    if (opNode.args.length === 1) {
+      const value = evaluate(node.toString(), scope);
+      return typeof value === "number" ? value : Number(value);
+    }
+
+    const rightVal = walkAndCollectSteps(opNode.args[1], steps, scope);
+    const value = evaluate(node.toString(), scope);
+
+    steps.push({
+      id: `step-${steps.length}`,
+      expression: `${formatResult(leftVal)} ${opNode.op} ${formatResult(rightVal)}`,
+      result: formatResult(value),
+      description: OPERATOR_LABELS[opNode.op] ?? `ดำเนินการ ${opNode.op}`,
+    });
+
+    return typeof value === "number" ? value : Number(value);
+  }
+
+  // ParenthesisNode คือวงเล็บ ให้ข้ามไปดูข้างในตรงๆ ไม่ต้องสร้าง step แยก
+  if (node.type === "ParenthesisNode") {
+    const parenNode = node as unknown as { content: MathNode };
+    return walkAndCollectSteps(parenNode.content, steps, scope);
+  }
+
+  // ConstantNode / SymbolNode (ตัวเลขหรือค่าคงที่ล้วนๆ เช่น pi, e) ไม่ต้องสร้าง step
+  const leafValue = evaluate(node.toString(), scope);
+  return typeof leafValue === "number" ? leafValue : Number(leafValue);
+}
+
+/**
+ * ฟังก์ชันหลักสำหรับสร้างขั้นตอนวิธีคิดจากข้อความสมการ
+ * ใช้เรียกพร้อมกับตอนกดปุ่ม "=" เพื่อเตรียมข้อมูลไว้ให้ panel "ดูวิธีคิด"
+ *
+ * @param expr ข้อความสมการที่ preprocess แล้ว (พร้อมส่งเข้า math.js)
+ * @param scope scope object สำหรับควบคุมโหมด DEG/RAD (จาก getAngleScope)
+ * @returns รายการขั้นตอนการคำนวณ เรียงตามลำดับที่คำนวณจริง
+ */
+function generateSteps(expr: string, scope: Record<string, unknown>): CalculationStep[] {
+  const steps: CalculationStep[] = [];
+  const tree = parse(expr);
+  walkAndCollectSteps(tree, steps, scope);
+  return steps;
+}
 
 /**
  * แปลงข้อความที่ผู้ใช้พิมพ์ในหน้าจอ (displayValue) ให้อยู่ในรูปแบบที่
@@ -29,12 +161,33 @@ function preprocessExpression(expr: string): string {
  * จัดรูปแบบผลลัพธ์ตัวเลขให้อ่านง่าย ตัดทศนิยมที่ยาวเกินไปออก
  * และกันปัญหา floating point error (เช่น 0.1+0.2 ไม่ให้เพี้ยนเป็น 0.30000000000000004)
  *
+ * หมายเหตุสำคัญ: ค่า default ของ math.js (notation: "auto") จะสลับเป็น
+ * scientific notation (เช่น 3.6288e+5) ทันทีที่ค่าตั้งแต่ 100,000 ขึ้นไป
+ * ซึ่งเกณฑ์นี้ไวเกินไปสำหรับเครื่องคิดเลขทั่วไป (9! = 362880 ไม่ควรโดนแปลง)
+ * จึงบังคับใช้ notation "fixed" สำหรับตัวเลขที่ยังไม่ใหญ่มาก แล้วค่อยสลับ
+ * ไปใช้ "auto" เฉพาะตัวเลขที่ใหญ่/เล็กเกินไปจริงๆ (เกิน 15 หลัก) เพื่อไม่ให้
+ * จอล้นด้วยเลขยาวเป็นพรืด
+ *
  * @param value ผลลัพธ์ดิบที่ได้จาก math.js (อาจเป็น number, Fraction, Complex ฯลฯ)
  * @returns ข้อความผลลัพธ์ที่พร้อมแสดงผล
  */
 function formatResult(value: unknown): string {
   if (typeof value === "number") {
-    return format(value, { precision: 12 });
+    const absValue = Math.abs(value);
+    const isExtremeMagnitude = absValue !== 0 && (absValue >= 1e15 || absValue < 1e-9);
+
+    if (isExtremeMagnitude) {
+      // เลขใหญ่/เล็กเกินไปจริงๆ ค่อยใช้ scientific notation กันจอล้น
+      return format(value, { precision: 12, notation: "auto" });
+    }
+
+    // กรณีทั่วไป บังคับแสดงเป็นเลขเต็มตามปกติ (ไม่ใช้ scientific notation)
+    // notation "fixed" จะโชว์ทศนิยม 12 หลักเต็มเสมอ (เช่น "362880.000000000000")
+    // จึงต้องตัดเลข 0 ท้ายทศนิยมที่ไม่มีความหมายออก และตัดจุดทศนิยมทิ้งถ้าไม่เหลือหลักใดๆ
+    const fixedStr = format(value, { precision: 12, notation: "fixed" });
+    return fixedStr.includes(".")
+      ? fixedStr.replace(/0+$/, "").replace(/\.$/, "")
+      : fixedStr;
   }
   // สำหรับผลลัพธ์ประเภทอื่น (เช่น หน่วยวัด, เศษส่วน) ให้ math.js จัดรูปแบบให้เอง
   return format(value as never);
@@ -62,15 +215,40 @@ export default function CalculatorPage() {
   // state เก็บข้อความ error กรณีสมการที่พิมพ์ไม่ถูกต้อง (เช่น วงเล็บไม่ครบ)
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  // state เก็บรายการขั้นตอนวิธีคิด (คำนวณพร้อมกับตอนกด "=" เก็บไว้เฉยๆ)
+  const [steps, setSteps] = useState<CalculationStep[]>([]);
+
+  // state ควบคุมว่ากำลังเปิด panel "ดูวิธีคิด" อยู่หรือไม่
+  const [showSteps, setShowSteps] = useState<boolean>(false);
+
+  // state โหมดหน่วยมุมของ sin/cos/tan (DEG = องศา, RAD = เรเดียน)
+  // ค่าเริ่มต้นเป็น DEG เพราะนักเรียน ม.ปลาย คุ้นเคยกับหน่วยองศามากกว่า
+  const [angleMode, setAngleMode] = useState<AngleMode>("DEG");
+
   /**
    * ฟังก์ชันสำหรับเพิ่มตัวอักษร/สัญลักษณ์ลงใน state displayValue
    * @param val สัญลักษณ์ทางคณิตศาสตร์ที่จะต่อท้ายข้อความเดิม
    */
-  const handleAppend = (val: string) => {
-    setDisplayValue((prev) => prev + val);
-    // เคลียร์ผลลัพธ์/error เดิมทุกครั้งที่ผู้ใช้พิมพ์ต่อ เพื่อไม่ให้ค้างของเก่า
+  /**
+   * ฟังก์ชันสลับโหมดหน่วยมุม DEG/RAD
+   * ต้องเคลียร์ผลลัพธ์/steps เดิมด้วย เพราะคำตอบของ sin/cos/tan จะเปลี่ยนไปตามโหมด
+   * (ผลลัพธ์เก่าที่ค้างอยู่จะกลายเป็นค่าที่คำนวณผิดโหมดทันทีถ้าไม่เคลียร์)
+   */
+  const toggleAngleMode = (mode: AngleMode) => {
+    setAngleMode(mode);
     setResultValue("");
     setErrorMessage("");
+    setSteps([]);
+    setShowSteps(false);
+  };
+
+  const handleAppend = (val: string) => {
+    setDisplayValue((prev) => prev + val);
+    // เคลียร์ผลลัพธ์/error/steps เดิมทุกครั้งที่ผู้ใช้พิมพ์ต่อ เพื่อไม่ให้ค้างของเก่า
+    setResultValue("");
+    setErrorMessage("");
+    setSteps([]);
+    setShowSteps(false);
   };
 
   /**
@@ -80,6 +258,8 @@ export default function CalculatorPage() {
     setDisplayValue((prev) => prev.slice(0, -1));
     setResultValue("");
     setErrorMessage("");
+    setSteps([]);
+    setShowSteps(false);
   };
 
   /**
@@ -89,12 +269,15 @@ export default function CalculatorPage() {
     setDisplayValue("");
     setResultValue("");
     setErrorMessage("");
+    setSteps([]);
+    setShowSteps(false);
   };
 
   /**
    * ฟังก์ชันที่ถูกเรียกเมื่อผู้ใช้กดปุ่ม "="
    * ใช้ math.js เป็นตัวคำนวณจริง (evaluate) โดยไม่ใช้ eval() ของ JavaScript
    * เพื่อความปลอดภัย (กัน code injection) และความแม่นยำของค่าทศนิยม
+   * พร้อมสร้างขั้นตอนวิธีคิด (steps) เก็บไว้สำหรับ panel "ดูวิธีคิด"
    */
   const handleCalculate = () => {
     // ไม่ต้องทำอะไรถ้าจอว่างเปล่า
@@ -104,13 +287,23 @@ export default function CalculatorPage() {
 
     try {
       const expression = preprocessExpression(displayValue);
-      const rawResult = evaluate(expression);
+      const scope = getAngleScope(angleMode);
+      const rawResult = evaluate(expression, scope);
       setResultValue(formatResult(rawResult));
       setErrorMessage("");
+
+      // สร้างขั้นตอนวิธีคิด ดักจับ error แยกจากการคำนวณหลัก
+      // เผื่อกรณีที่ evaluate() ผ่านแต่ parse tree walker มีปัญหา (เช่น syntax แปลกๆ)
+      try {
+        setSteps(generateSteps(expression, scope));
+      } catch {
+        setSteps([]);
+      }
     } catch (err) {
       // ดักจับกรณีสมการผิดรูปแบบ เช่น วงเล็บไม่ครบ หรือพิมพ์สัญลักษณ์ผิด
       setResultValue("");
       setErrorMessage("รูปแบบสมการไม่ถูกต้อง");
+      setSteps([]);
     }
   };
 
@@ -137,6 +330,32 @@ export default function CalculatorPage() {
           
           {/* Subtle Glow Header */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* DEG/RAD Toggle - สลับหน่วยมุมสำหรับ sin/cos/tan */}
+          <div className="flex justify-end mb-3">
+            <div className="inline-flex bg-slate-950 border border-slate-800 rounded-lg p-1 gap-1">
+              <button
+                onClick={() => toggleAngleMode("DEG")}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                  angleMode === "DEG"
+                    ? "bg-purple-500/30 text-purple-200 border border-purple-400/50"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                DEG
+              </button>
+              <button
+                onClick={() => toggleAngleMode("RAD")}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                  angleMode === "RAD"
+                    ? "bg-purple-500/30 text-purple-200 border border-purple-400/50"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                RAD
+              </button>
+            </div>
+          </div>
 
           {/* Display Screen Box (2 Lines) */}
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 mb-6 shadow-inner text-right space-y-2">
@@ -168,7 +387,50 @@ export default function CalculatorPage() {
 
           </div>
 
-          {/* Keypad Grid Section */}
+          {/* ปุ่ม "ดูวิธีคิด" - โผล่เฉพาะตอนมีผลลัพธ์และมีมากกว่า 1 ขั้นตอน */}
+          {steps.length > 1 && (
+            <button
+              onClick={() => setShowSteps((prev) => !prev)}
+              className="w-full mb-4 p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-purple-300 text-xs font-bold flex items-center justify-center gap-2 transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+              {showSteps ? "ซ่อนวิธีคิด" : "ดูวิธีคิด"}
+              <HelpCircle className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Steps Panel - แสดงขั้นตอนการคำนวณทีละขั้น */}
+          {showSteps && steps.length > 1 && (
+            <div className="mb-6 bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+              {steps.map((step, index) => {
+                const isLastStep = index === steps.length - 1;
+                return (
+                  <div key={step.id} className="flex gap-2.5 items-start">
+                    <div
+                      className={`min-w-[22px] h-[22px] rounded-md text-xs font-bold flex items-center justify-center ${
+                        isLastStep
+                          ? "bg-orange-900/60 text-orange-200"
+                          : "bg-purple-900/60 text-purple-200"
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-mono text-sm text-slate-200">
+                        {step.expression} ={" "}
+                        <span className={isLastStep ? "text-white font-bold" : "text-amber-400 font-bold"}>
+                          {step.result}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        {step.description}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <div className="grid grid-cols-5 gap-2.5">
             
             {/* Row 1: Scientific Functions */}
