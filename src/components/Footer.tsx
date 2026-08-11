@@ -84,7 +84,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} LearnHub Platform. สงวนลิขสิทธิ์เฉพาะ UI/UX Template</p>
-          <p className="text-slate-400">ออกแบบสำหรับนักเรียน ม.ปลาย ยุค Active Learning</p>
+          <p className="text-slate-400">ออกแบบสำหรับนักเรียน  ยุค Active Learning</p>
         </div>
       </div>
     </footer>
