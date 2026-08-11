@@ -132,7 +132,7 @@ const mockKnowledgeCards: KnowledgeCard[] = [
 export default function DiscoveryPage() {
   // useState สำหรับเก็บค่าข้อความค้นหาที่ผู้ใช้พิมพ์
   const [searchQuery, setSearchQuery] = useState<string>("");
-  
+
   // useState สำหรับเก็บหมวดวิชาที่เลือกกรอง
   const [selectedSubject, setSelectedSubject] = useState<string>("ทั้งหมด");
 
@@ -159,7 +159,7 @@ export default function DiscoveryPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-10">
-        
+
         {/* Page Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-orange-400 text-xs font-bold shadow-md">
@@ -178,7 +178,7 @@ export default function DiscoveryPage() {
         <div className="max-w-2xl mx-auto">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 rounded-3xl blur-md opacity-40 group-hover:opacity-75 transition duration-300 pointer-events-none" />
-            
+
             <div className="relative flex items-center bg-slate-900/90 border border-slate-700/80 rounded-2xl p-2 shadow-2xl backdrop-blur-xl">
               <Search className="w-6 h-6 text-slate-400 ml-3 shrink-0" />
               <input
