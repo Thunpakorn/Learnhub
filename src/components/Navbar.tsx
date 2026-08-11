@@ -21,13 +21,15 @@ export default function Navbar() {
     { name: "Math Companion", href: "/calculator", icon: Calculator },
   ];
 
+  const isAuthOrOnboarding = pathname === "/login" || pathname === "/onboarding";
+
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/80 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* Logo & Brand (คลิกแล้วไปหน้า Discovery Engine) */}
-          <Link href="/discovery" className="flex items-center gap-3 group">
+          {/* Logo & Brand */}
+          <Link href={isAuthOrOnboarding ? "#" : "/discovery"} className="flex items-center gap-3 group">
             <div className="w-11 h-11 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
               <Image src="/logo.svg" alt="LearnHub" width={44} height={44} priority />
             </div>
@@ -41,49 +43,54 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/60">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
+          {/* Render navigation menus only after completing onboarding / entering app */}
+          {!isAuthOrOnboarding && (
+            <>
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex items-center gap-1 lg:gap-2 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/60">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isActive
+                          ? "bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-semibold shadow-md shadow-orange-500/20"
+                          : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? "text-slate-950 stroke-[2.5]" : "text-orange-400"}`} />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* CTA Button */}
+              <div className="hidden lg:flex items-center gap-3">
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-semibold shadow-md shadow-orange-500/20"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800/60"
-                  }`}
+                  href="/discovery"
+                  className="px-5 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 hover:opacity-95 transition-all shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-slate-950 stroke-[2.5]" : "text-orange-400"}`} />
-                  {item.name}
+                  <span>เริ่มค้นหาความรู้</span>
+                  <Sparkles className="w-4 h-4 stroke-[2.5]" />
                 </Link>
-              );
-            })}
-          </nav>
+              </div>
 
-          {/* CTA Button */}
-          <div className="hidden lg:flex items-center gap-3">
-            <Link
-              href="/discovery"
-              className="px-5 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 hover:opacity-95 transition-all shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
-            >
-              <span>เริ่มค้นหาความรู้</span>
-              <Sparkles className="w-4 h-4 stroke-[2.5]" />
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none"
-              aria-label="Toggle Menu"
-            >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
+              {/* Mobile Menu Button */}
+              <div className="md:hidden flex items-center">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="p-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none"
+                  aria-label="Toggle Menu"
+                >
+                  {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
