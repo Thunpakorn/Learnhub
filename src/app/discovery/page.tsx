@@ -311,15 +311,16 @@ export default function DiscoveryPage() {
     });
   }, [searchQuery, selectedSubject]);
 
-  const handleSearch = async (event?: FormEvent<HTMLFormElement>) => {
+  const handleSearch = async (event?: FormEvent<HTMLFormElement>, overrideQuery?: string) => {
     event?.preventDefault();
-    const query = searchQuery.trim();
+    const query = (overrideQuery ?? searchQuery).trim();
     if (!query) {
       setSearchError("โปรดพิมพ์คำค้นหาก่อนกดค้นหา");
       setSearchResults(null);
       return;
     }
 
+    setSearchQuery(query);
     setIsSearching(true);
     setSearchError(null);
     setSearchResults(null);
@@ -327,21 +328,25 @@ export default function DiscoveryPage() {
     try {
       const response = await fetch("/api/search", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.error || "ไม่สามารถค้นหาได้");
+        // Surface the real error from the backend — don't hide it with fallback
+        throw new Error(data?.error || `เซิร์ฟเวอร์ตอบกลับ HTTP ${response.status}`);
       }
 
-      setSearchResults(normalizeResults(data.result, query));
+      const normalized = normalizeResults(data.result, query);
+      if (!normalized || normalized.length === 0) {
+        throw new Error("AI ไม่ส่งข้อมูลกลับมา กรุณาลองใหม่อีกครั้ง");
+      }
+      setSearchResults(normalized);
     } catch (error) {
       setSearchError(error instanceof Error ? error.message : String(error));
-      setSearchResults(buildFallbackResults(query));
+      // Do NOT set fallback results here — we want the error to be visible
+      setSearchResults(null);
     } finally {
       setIsSearching(false);
     }
@@ -526,18 +531,39 @@ export default function DiscoveryPage() {
 
           {(isSearching || searchError || searchResults) && (
             <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-lg shadow-slate-950/20">
-              {isSearching ? (
-                <p className="text-slate-300">กำลังค้นหาคำตอบจาก AI...</p>
-              ) : searchError ? (
-                <p className="text-rose-300 mb-4">{searchError}</p>
-              ) : null}
+              {/* Loading state */}
+              {isSearching && (
+                <div className="flex items-center gap-3 text-slate-300">
+                  <svg className="animate-spin h-5 w-5 text-orange-400 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <span>กำลังส่งคำถามไปยัง AI Pipeline... กรุณารอสักครู่</span>
+                </div>
+              )}
 
-              {searchResults && searchResults.length > 0 ? (
+              {/* Error state — shown clearly, no silent fallback */}
+              {!isSearching && searchError && (
+                <div className="rounded-2xl border border-rose-700/40 bg-rose-950/30 p-4 text-rose-300">
+                  <p className="font-semibold mb-1">⚠️ เกิดข้อผิดพลาดจาก AI</p>
+                  <p className="text-sm leading-relaxed">{searchError}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleSearch(undefined, searchQuery)}
+                    className="mt-3 text-xs font-semibold text-orange-400 hover:text-orange-300 underline underline-offset-2"
+                  >
+                    ลองอีกครั้ง
+                  </button>
+                </div>
+              )}
+
+              {/* AI Result Cards */}
+              {!isSearching && searchResults && searchResults.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-white text-lg font-semibold">ผลลัพธ์การค้นหาจาก AI</h2>
+                    <h2 className="text-white text-lg font-semibold">ผลลัพธ์จาก AI Pipeline</h2>
                     <span className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300">
-                      {searchResults.length} กล่องตามหมวดหมู่
+                      {searchResults.length} หมวดหมู่
                     </span>
                   </div>
 
@@ -545,7 +571,7 @@ export default function DiscoveryPage() {
                     {searchResults.map((item, index) => (
                       <article
                         key={`${item.category}-${index}`}
-                        className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 shadow-lg shadow-slate-950/20"
+                        className="rounded-3xl border border-slate-700/60 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 shadow-lg shadow-slate-950/20"
                       >
                         <div className="flex items-center justify-between gap-3 mb-4">
                           <span className="rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-300">
@@ -558,7 +584,7 @@ export default function DiscoveryPage() {
 
                         <div className="space-y-3 text-sm text-slate-300">
                           <div>
-                            <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">ชื่อหัวข้อที่ค้นหา</p>
+                            <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">ชื่อหัวข้อ</p>
                             <h3 className="text-base font-semibold text-white">{item.topicName}</h3>
                           </div>
 
@@ -568,7 +594,7 @@ export default function DiscoveryPage() {
                           </div>
 
                           <div>
-                            <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">คำตอบ/วิธีแก้</p>
+                            <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">คำตอบ / วิธีแก้</p>
                             <p className="leading-relaxed text-amber-200">{item.solution}</p>
                           </div>
 
@@ -581,7 +607,7 @@ export default function DiscoveryPage() {
                     ))}
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
           )}
 
@@ -590,7 +616,7 @@ export default function DiscoveryPage() {
             {["กีตาร์โปร่ง", "รังผึ้ง", "ลูกบาสเกตบอล", "ดอกทานตะวัน", "รุ้งกินน้ำ", "ฟองสบู่"].map((keyword) => (
               <button
                 key={keyword}
-                onClick={() => setSearchQuery(keyword)}
+                onClick={() => handleSearch(undefined, keyword)}
                 className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-orange-400 border border-slate-800 transition-colors"
               >
                 {keyword}
