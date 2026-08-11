@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, Filter } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, Filter, Plus, Paperclip, Camera, FileText, X } from "lucide-react";
 
 interface KnowledgeCard {
   id: string;
@@ -27,6 +27,14 @@ interface AiResultCard {
   solution: string;
   trick: string;
   image: string;
+}
+
+interface AttachmentItem {
+  id: string;
+  type: "file" | "photo";
+  name: string;
+  previewUrl: string;
+  file?: File;
 }
 
 const mockKnowledgeCards: KnowledgeCard[] = [
@@ -190,6 +198,12 @@ export default function DiscoveryPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [selectedSubject, setSelectedSubject] = useState<string>("ทั้งหมด");
+  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState<boolean>(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const subjects = [
     { name: "ทั้งหมด", icon: Filter },
@@ -198,6 +212,91 @@ export default function DiscoveryPage() {
     { name: "ชีววิทยา", icon: Dna },
     { name: "เคมี", icon: Flame },
   ];
+
+  const handleFileInput = async (event: ChangeEvent<HTMLInputElement>) => {
+    setCameraError(null);
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const newAttachments = Array.from(files).map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}`,
+      type: "file" as const,
+      name: file.name,
+      previewUrl: URL.createObjectURL(file),
+      file,
+    }));
+
+    setAttachments((current) => [...current, ...newAttachments]);
+    setShowAttachmentMenu(false);
+    event.target.value = "";
+  };
+
+  const handleTakePhoto = async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      streamRef.current = stream;
+      setIsCameraActive(true);
+      setShowAttachmentMenu(false);
+    } catch (error) {
+      setCameraError("ไม่สามารถเข้าถึงกล้องได้ โปรดอนุญาตการใช้งานกล้อง");
+      setIsCameraActive(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current
+        .play()
+        .catch(() => {
+          /* ignore autoplay failure */
+        });
+    }
+  }, [isCameraActive]);
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `photo-${Date.now()}.png`, { type: "image/png" });
+      const photoAttachment: AttachmentItem = {
+        id: `photo-${Date.now()}`,
+        type: "photo",
+        name: file.name,
+        previewUrl: URL.createObjectURL(file),
+        file,
+      };
+      setAttachments((current) => [...current, photoAttachment]);
+      stopCamera();
+    }, "image/png");
+  };
+
+  const stopCamera = () => {
+    setIsCameraActive(false);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+      attachments.forEach((attachment) => URL.revokeObjectURL(attachment.previewUrl));
+    };
+  }, [attachments]);
+
+  const removeAttachment = (id: string) => {
+    setAttachments((current) => current.filter((item) => item.id !== id));
+  };
 
   const filteredCards = useMemo(() => {
     return mockKnowledgeCards.filter((card) => {
@@ -269,6 +368,15 @@ export default function DiscoveryPage() {
             <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 rounded-3xl blur-md opacity-40 group-hover:opacity-75 transition duration-300 pointer-events-none" />
 
             <div className="relative flex items-center bg-slate-900/90 border border-slate-700/80 rounded-2xl p-2 shadow-2xl backdrop-blur-xl">
+              <button
+                type="button"
+                onClick={() => setShowAttachmentMenu((prev) => !prev)}
+                className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 text-slate-100 hover:border-slate-500 transition"
+                aria-label="Open attachment menu"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+
               <div className="flex items-center flex-1 px-3">
                 <Search className="w-6 h-6 text-slate-400 shrink-0 mr-3" />
                 <input
@@ -304,7 +412,117 @@ export default function DiscoveryPage() {
                 </button>
               </div>
             </div>
+
+            {showAttachmentMenu && (
+              <div className="absolute left-0 right-0 mt-3 rounded-3xl border border-slate-700 bg-slate-950/95 shadow-2xl shadow-slate-950/40 p-4 z-10">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="cursor-pointer rounded-3xl border border-slate-700 bg-slate-900/90 p-4 flex items-center gap-3 hover:border-slate-500 transition">
+                    <Paperclip className="w-5 h-5 text-slate-200" />
+                    <span className="text-sm text-slate-100">แนบไฟล์</span>
+                    <input
+                      type="file"
+                      accept="*/*"
+                      multiple
+                      onChange={handleFileInput}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleTakePhoto}
+                    className="rounded-3xl border border-slate-700 bg-slate-900/90 p-4 flex items-center gap-3 hover:border-slate-500 transition"
+                  >
+                    <Camera className="w-5 h-5 text-slate-200" />
+                    <span className="text-sm text-slate-100">ถ่ายรูป</span>
+                  </button>
+                </div>
+                {cameraError && (
+                  <p className="mt-3 text-sm text-rose-300">{cameraError}</p>
+                )}
+              </div>
+            )}
           </form>
+
+          {attachments.length > 0 && (
+            <div className="mb-4 rounded-3xl border border-slate-800 bg-slate-900/90 p-4 shadow-lg shadow-slate-950/10">
+              <div className="flex items-center justify-between gap-4 mb-3">
+                <div className="flex items-center gap-2 text-slate-200 font-semibold">
+                  <FileText className="w-5 h-5 text-amber-300" />
+                  <span>ไฟล์ที่แนบ</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    attachments.forEach((attachment) => URL.revokeObjectURL(attachment.previewUrl));
+                    setAttachments([]);
+                  }}
+                  className="text-slate-400 hover:text-white flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  ลบทั้งหมด
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {attachments.map((attachment) => (
+                  <div key={attachment.id} className="min-w-[160px] max-w-[220px] rounded-3xl border border-slate-700 bg-slate-950/90 overflow-hidden shadow-lg shadow-slate-950/20">
+                    <div className="relative h-28 bg-slate-800/70 flex items-center justify-center overflow-hidden">
+                      <img src={attachment.previewUrl} alt={attachment.name} className="h-full w-full object-cover" />
+                    </div>
+                    <div className="p-3">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-xs text-slate-400 uppercase tracking-[0.18em]">{attachment.type === "photo" ? "ภาพถ่าย" : "ไฟล์"}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(attachment.id)}
+                          className="text-slate-400 hover:text-white"
+                          aria-label="Remove attachment"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-sm text-slate-100 truncate">{attachment.name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isCameraActive && (
+            <div className="fixed inset-0 z-50 bg-slate-950/95 p-4 sm:p-6">
+              <div className="flex h-full flex-col">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h3 className="text-white text-xl font-semibold">โหมดกล้องเต็มหน้าจอ</h3>
+                    <p className="text-slate-400 text-sm">เล็งกล้อง แล้วกดถ่ายเพื่อเพิ่มภาพในแถบแสดงตัวอย่าง</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={stopCamera}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-slate-200 hover:border-slate-500 transition"
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+
+                <div className="relative flex-1 overflow-hidden rounded-3xl bg-black">
+                  <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="inline-flex items-center justify-center gap-2 rounded-3xl bg-orange-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400 transition"
+                  >
+                    <Camera className="w-5 h-5" />
+                    ถ่ายรูป
+                  </button>
+                  <div className="text-slate-400 text-xs sm:text-sm">หากไม่เห็นภาพ ให้อนุญาตการเข้าถึงกล้องในเบราว์เซอร์ของคุณ</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {(isSearching || searchError || searchResults) && (
             <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-lg shadow-slate-950/20">
