@@ -18,6 +18,25 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+### Discovery search with OpenAI
+
+1. Create a `.env.local` file at the project root.
+2. Add your OpenAI API key:
+
+```bash
+OPENAI_API_KEY=your-openai-api-key
+```
+
+3. Start the dev server:
+
+```bash
+npm run dev
+```
+
+4. Open `/discovery` and use the search bar.
+
+The discovery page sends the search query to `src/app/api/search/route.ts`, which calls OpenAI and returns an AI-generated Thai response.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

@@ -1,16 +1,7 @@
 import type { Metadata } from "next";
-import { Prompt } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-// โหลดฟอนต์ Prompt จาก Google Fonts รองรับภาษาไทยและอังกฤษสำหรับ EdTech ไทย
-const promptFont = Prompt({
-  weight: ["300", "400", "500", "600", "700", "800"],
-  subsets: ["latin", "thai"],
-  variable: "--font-prompt",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "LearnHub - เปลี่ยนสิ่งรอบตัวเป็นความรู้คณิต-วิทย์ ม.ปลาย",
@@ -23,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${promptFont.variable}`}>
+    <html lang="th">
       <body className="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-orange-500 selection:text-slate-950">
         {/* Nav Bar ร่วมทั้งเว็บไซต์ */}
         <Navbar />
