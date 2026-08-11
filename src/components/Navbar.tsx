@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Compass, Cpu, Calculator, Sparkles, Menu, X, Rocket } from "lucide-react";
+import { Compass, Cpu, Calculator, Sparkles, Menu, X } from "lucide-react";
 
 /**
  * Component Navbar หลักของ LearnHub
@@ -27,8 +28,8 @@ export default function Navbar() {
           
           {/* Logo & Brand (คลิกแล้วไปหน้า Discovery Engine) */}
           <Link href="/discovery" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-orange-500 via-amber-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-orange-500/25 group-hover:scale-105 transition-transform duration-300">
-              <Rocket className="w-6 h-6 text-slate-950 stroke-[2.5]" />
+            <div className="w-11 h-11 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+              <Image src="/logo.svg" alt="LearnHub" width={44} height={44} priority />
             </div>
             <div>
               <div className="flex items-center gap-2">

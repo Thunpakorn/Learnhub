@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Rocket, Sparkles, BookOpen, Atom, Calculator, Cpu, ShieldCheck } from "lucide-react";
+import Image from "next/image";
+import { Sparkles, BookOpen, Atom, Calculator, Cpu, ShieldCheck } from "lucide-react";
 
 /**
  * Component Footer หลักของ LearnHub
@@ -14,8 +15,8 @@ export default function Footer() {
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <Rocket className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+              <div className="w-10 h-10 flex items-center justify-center">
+                <Image src="/logo.svg" alt="LearnHub" width={40} height={40} />
               </div>
               <span className="text-2xl font-black tracking-tight text-white">
                 Learn<span className="text-orange-400">Hub</span>
