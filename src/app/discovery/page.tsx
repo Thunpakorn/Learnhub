@@ -24,6 +24,7 @@ interface AiResultCard {
   category: string;
   topicName: string;
   information: string;
+  fullInformation?: string;
   solution: string;
   trick: string;
   image: string;
@@ -148,6 +149,7 @@ function buildFallbackResults(query: string): AiResultCard[] {
       category,
       topicName: query || "หัวข้อที่คุณสนใจ",
       information: `คำถามนี้มีความเกี่ยวข้องกับหลักการพื้นฐานของ${category}ที่สามารถเชื่อมโยงกับการเรียนรู้ในชีวิตประจำวันได้อย่างเป็นระบบ`,
+      fullInformation: `คำถามนี้เชื่อมโยงกับหลักการพื้นฐานของ${category} และควรเริ่มจากตัวอย่างในชีวิตจริง เช่น การสังเกตสิ่งรอบตัวเพื่อสร้างความเข้าใจที่ลึกขึ้น`,
       solution: "แบ่งคำถามออกเป็นส่วนเล็ก ๆ แล้วเชื่อมกับหลักการที่เกี่ยวข้องอย่างชัดเจน",
       trick: "ลองใช้ตัวอย่างจากสิ่งที่เห็นรอบตัวเพื่อเข้าใจได้ง่ายขึ้น",
       image,
@@ -162,9 +164,26 @@ function normalizeResults(raw: unknown, query: string): AiResultCard[] {
       .map((item) => ({
         category: String(item.category ?? item.categoryName ?? "วิทยาศาสตร์"),
         topicName: String(item.topicName ?? item.topic ?? (query || "หัวข้อที่คุณสนใจ")),
-        information: String(item.information ?? item.info ?? item.summary ?? "ไม่มีข้อมูลรายละเอียด"),
-        solution: String(item.solution ?? item.answer ?? "ไม่มีคำตอบแบบสั้น"),
+        information: String(
+          item.information ??
+            item.info ??
+            item.summary ??
+            item.answer ??
+            item.text ??
+            item.description ??
+            "ไม่มีข้อมูลรายละเอียด"
+        ),
+        solution: String(item.solution ?? item.tip ?? "ไม่มีคำตอบแบบสั้น"),
         trick: String(item.trick ?? item.tip ?? "ลองเชื่อมกับตัวอย่างในชีวิตประจำวัน"),
+        fullInformation: String(
+          item.fullInformation ??
+            item.information ??
+            item.answer ??
+            item.summary ??
+            item.text ??
+            item.description ??
+            "ไม่มีข้อมูลเพิ่มเติม"
+        ),
         image: String(item.image ?? "🔍"),
       }));
   }
@@ -181,8 +200,7 @@ function normalizeResults(raw: unknown, query: string): AiResultCard[] {
       {
         category: "วิทยาศาสตร์",
         topicName: query || "หัวข้อที่คุณสนใจ",
-        information: raw,
-        solution: "ลองอ่านคำอธิบายจาก AI แล้วเชื่อมกับตัวอย่างในชีวิตประจำวัน",
+        information: raw,        fullInformation: raw,        solution: "ลองอ่านคำอธิบายจาก AI แล้วเชื่อมกับตัวอย่างในชีวิตประจำวัน",
         trick: "แบ่งหัวข้อออกเป็นคำหลักเพื่อจำได้ง่าย",
         image: "🧠",
       },
@@ -197,12 +215,14 @@ export default function DiscoveryPage() {
   const [searchResults, setSearchResults] = useState<AiResultCard[] | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [expandedResultIndex, setExpandedResultIndex] = useState<number | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string>("ทั้งหมด");
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState<boolean>(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const subjects = [
@@ -389,7 +409,7 @@ export default function DiscoveryPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="ลองพิมพ์สิ่งที่คุณสนใจ เช่น กีตาร์, ผึ้ง, บาสเกตบอล, รุ้งกินน้ำ..."
-                  className="w-full bg-transparent px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none text-base font-medium"
+                  className="min-w-0 flex-1 bg-transparent px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none text-base font-medium"
                 />
               </div>
 
@@ -416,6 +436,15 @@ export default function DiscoveryPage() {
                   <span className="hidden sm:inline">ค้นหา</span>
                 </button>
               </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileInput}
+                accept="*/*"
+                multiple
+              />
             </div>
 
             {showAttachmentMenu && (
@@ -590,7 +619,26 @@ export default function DiscoveryPage() {
 
                           <div>
                             <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">ข้อมูล</p>
-                            <p className="leading-relaxed">{item.information}</p>
+                            <p className="leading-relaxed">
+                              {expandedResultIndex === index
+                                ? item.fullInformation ?? item.information
+                                : item.information.length > 220
+                                ? `${item.information.slice(0, 220)}...`
+                                : item.information}
+                            </p>
+                            {(item.fullInformation && item.fullInformation !== item.information) || item.information.length > 220 ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedResultIndex((current) =>
+                                    current === index ? null : index
+                                  )
+                                }
+                                className="mt-2 inline-flex rounded-full border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-700"
+                              >
+                                {expandedResultIndex === index ? "ย่อ" : "เพิ่มเติม"}
+                              </button>
+                            ) : null}
                           </div>
 
                           <div>
