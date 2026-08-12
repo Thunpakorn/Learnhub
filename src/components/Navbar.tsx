@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Compass, Cpu, Calculator, Sparkles, Menu, X } from "lucide-react";
+import { Compass, Cpu, Calculator, Menu, X } from "lucide-react";
 
 /**
  * Component Navbar หลักของ LearnHub
@@ -68,15 +68,14 @@ export default function Navbar() {
                 })}
               </nav>
 
-              {/* CTA Button */}
+              {/* Account Button */}
               <div className="hidden lg:flex items-center gap-3">
-                <Link
-                  href="/discovery"
-                  className="px-5 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 hover:opacity-95 transition-all shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
+                <button
+                  type="button"
+                  className="px-5 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 hover:opacity-95 transition-all shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0"
                 >
-                  <span>เริ่มค้นหาความรู้</span>
-                  <Sparkles className="w-4 h-4 stroke-[2.5]" />
-                </Link>
+                  My account
+                </button>
               </div>
 
               {/* Mobile Menu Button */}
@@ -117,14 +116,13 @@ export default function Navbar() {
             );
           })}
           <div className="pt-2">
-            <Link
-              href="/discovery"
+            <button
+              type="button"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-orange-500 to-amber-400 shadow-lg shadow-orange-500/25"
+              className="w-full px-5 py-3 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-orange-500 to-amber-400 shadow-lg shadow-orange-500/25"
             >
-              <Sparkles className="w-5 h-5" />
-              <span>เริ่มค้นหาความรู้</span>
-            </Link>
+              My account
+            </button>
           </div>
         </div>
       )}
