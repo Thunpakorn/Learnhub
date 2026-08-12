@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root {
+  --font-prompt: 'Prompt', sans-serif;
+}
+
+body {
+  font-family: var(--font-prompt), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Scrollbar styling for sleek high-tech feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
