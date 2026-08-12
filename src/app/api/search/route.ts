@@ -23,23 +23,75 @@ function isOpenRouterKey(key?: string) {
   return Boolean(key) && typeof key === "string" && /^(sk-or-|or-)/.test(key);
 }
 
-function parseResultPayload(rawText: string): SearchResultItem[] | null {
+function buildFallbackResult(query: string): SearchResultItem[] {
+  const normalized = query.toLowerCase();
+  const isMath = /(เลข|สมการ|ฟังก์ชัน|คณิต|จำนวน|กราฟ|เศษ|อสมการ|พื้นที่|ทฤษฎี)/.test(normalized);
+  const isScience = /(ฟิสิกส์|เคมี|ชีว|แสง|คลื่น|เสียง|ดาว|น้ำ|สาร|เซลล์|พลัง|รุ้ง|สบู่|กีตาร์|ผึ้ง|บาส|ลูก)/.test(normalized);
+  const category = isMath && isScience ? "วิทยาศาสตร์ & คณิตศาสตร์" : isMath ? "คณิตศาสตร์" : isScience ? "วิทยาศาสตร์" : "วิทยาศาสตร์";
+
+  return [
+    {
+      category,
+      topicName: query || "หัวข้อที่คุณสนใจ",
+      information: `คำถามนี้มีความเกี่ยวข้องกับหลักการ${category}ในชีวิตประจำวันและสามารถอธิบายได้ด้วยตัวอย่างที่เข้าใจง่าย`,
+      solution: "สรุปคำตอบด้วยหลักการพื้นฐานและตัวอย่างที่เข้าใจง่าย",
+      trick: "เชื่อมคำถามกับตัวอย่างในชีวิตประจำวันเพื่อเข้าใจง่ายขึ้น",
+      image: category.includes("คณิต") ? "📐" : "🔬",
+    },
+  ];
+}
+
+function parseResultPayload(rawText: string, query: string): SearchResultItem[] | null {
   const trimmed = rawText.trim();
   if (!trimmed) return null;
 
   // Strip markdown code fences if present
-  const jsonCandidate = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1] ?? trimmed;
+  const jsonCandidate = trimmed.match(/\`\`\`(?:json)?\s*([\s\S]*?)\`\`\`/i)?.[1] ?? trimmed;
 
   try {
     const parsed = JSON.parse(jsonCandidate);
-    if (Array.isArray(parsed)) return parsed as SearchResultItem[];
-    if (parsed && typeof parsed === "object" && Array.isArray((parsed as Record<string, unknown>).items)) {
-      return (parsed as Record<string, unknown>).items as SearchResultItem[];
+
+    if (Array.isArray(parsed)) {
+      return parsed as SearchResultItem[];
+    }
+
+    if (parsed && typeof parsed === "object") {
+      const asRecord = parsed as Record<string, unknown>;
+      if (Array.isArray(asRecord.items)) {
+        return asRecord.items as SearchResultItem[];
+      }
+
+      if (
+        typeof asRecord.information === "string" ||
+        typeof asRecord.answer === "string" ||
+        typeof asRecord.topicName === "string"
+      ) {
+        return [
+          {
+            category: String(asRecord.category ?? "วิทยาศาสตร์"),
+            topicName: String(asRecord.topicName ?? asRecord.topic ?? query ?? "หัวข้อที่คุณสนใจ"),
+            information: String(asRecord.information ?? asRecord.answer ?? asRecord.summary ?? trimmed),
+            solution: String(asRecord.solution ?? asRecord.answer ?? "ดูคำอธิบายจาก AI แล้วสรุปสาระสำคัญ"),
+            trick: String(asRecord.trick ?? asRecord.tip ?? "เชื่อมข้อมูลกับตัวอย่างที่เข้าใจง่าย"),
+            image: String(asRecord.image ?? "🔍"),
+          },
+        ];
+      }
     }
   } catch {
-    // Could not parse JSON — return null to signal failure
+    // ignore parse errors and fall back to using the raw AI response
   }
-  return null;
+
+  return [
+    {
+      category: "วิทยาศาสตร์",
+      topicName: query || "ข้อมูลจาก AI",
+      information: trimmed,
+      solution: "อ่านคำอธิบายจาก AI และสรุปสาระสำคัญ",
+      trick: "เชื่อมข้อมูลกับตัวอย่างที่เข้าใจง่าย",
+      image: "🧠",
+    },
+  ];
 }
 
 // Model priority list — tries each in order until one succeeds
@@ -125,20 +177,10 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const parsedResult = parseResultPayload(resultText);
+      const parsedResult = parseResultPayload(resultText, query);
       if (!parsedResult) {
-        // LLM returned non-JSON — return raw text as information field
         return NextResponse.json({
-          result: [
-            {
-              category: "วิทยาศาสตร์",
-              topicName: query,
-              information: resultText,
-              solution: "ดูคำอธิบายด้านบน",
-              trick: "AI ตอบกลับในรูปแบบข้อความ ไม่ใช่ JSON โครงสร้างมาตรฐาน",
-              image: "🧠",
-            },
-          ],
+          result: buildFallbackResult(query),
           modelUsed: model,
         });
       }
