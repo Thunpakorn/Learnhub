@@ -310,7 +310,7 @@ export default function CalculatorPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-center">
       <div className="max-w-4xl w-full space-y-8">
-        
+
         {/* Page Header */}
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-purple-400 text-xs font-bold shadow-md">
@@ -318,7 +318,7 @@ export default function CalculatorPage() {
             Math Companion
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            เครื่องคิดเลขวิทยาศาสตร์ <span className="text-purple-400">มัธยมปลาย</span>
+            เครื่องคิดเลขวิทยาศาสตร์ <span className="text-purple-400"></span>
           </h1>
           <p className="text-slate-400 text-sm">
             เครื่องมือช่วยคำนวณสมการฟิสิกส์ เคมี และคณิตศาสตร์ รองรับฟังก์ชันตรีโกณมิติ ลอการิทึม และยกกำลัง
@@ -327,7 +327,7 @@ export default function CalculatorPage() {
 
         {/* Calculator Main Container */}
         <div className="max-w-xl mx-auto bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-xl relative">
-          
+
           {/* Subtle Glow Header */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -336,21 +336,19 @@ export default function CalculatorPage() {
             <div className="inline-flex bg-slate-950 border border-slate-800 rounded-lg p-1 gap-1">
               <button
                 onClick={() => toggleAngleMode("DEG")}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                  angleMode === "DEG"
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${angleMode === "DEG"
                     ? "bg-purple-500/30 text-purple-200 border border-purple-400/50"
                     : "text-slate-500 hover:text-slate-300"
-                }`}
+                  }`}
               >
                 DEG
               </button>
               <button
                 onClick={() => toggleAngleMode("RAD")}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                  angleMode === "RAD"
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${angleMode === "RAD"
                     ? "bg-purple-500/30 text-purple-200 border border-purple-400/50"
                     : "text-slate-500 hover:text-slate-300"
-                }`}
+                  }`}
               >
                 RAD
               </button>
@@ -359,7 +357,7 @@ export default function CalculatorPage() {
 
           {/* Display Screen Box (2 Lines) */}
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 mb-6 shadow-inner text-right space-y-2">
-            
+
             {/* Line 1: Expression Display (Text typed by user) */}
             <div className="min-h-[32px] text-slate-300 font-mono text-lg sm:text-xl tracking-wider overflow-x-auto whitespace-nowrap scrollbar-none flex items-center justify-end">
               {displayValue ? (
@@ -407,11 +405,10 @@ export default function CalculatorPage() {
                 return (
                   <div key={step.id} className="flex gap-2.5 items-start">
                     <div
-                      className={`min-w-[22px] h-[22px] rounded-md text-xs font-bold flex items-center justify-center ${
-                        isLastStep
+                      className={`min-w-[22px] h-[22px] rounded-md text-xs font-bold flex items-center justify-center ${isLastStep
                           ? "bg-orange-900/60 text-orange-200"
                           : "bg-purple-900/60 text-purple-200"
-                      }`}
+                        }`}
                     >
                       {index + 1}
                     </div>
@@ -432,7 +429,7 @@ export default function CalculatorPage() {
             </div>
           )}
           <div className="grid grid-cols-5 gap-2.5">
-            
+
             {/* Row 1: Scientific Functions */}
             <button
               onClick={() => handleAppend("sin(")}
@@ -638,7 +635,7 @@ export default function CalculatorPage() {
             >
               .
             </button>
-            
+
             {/* Equal Button (Stubs handleCalculate without logic) */}
             <button
               onClick={handleCalculate}

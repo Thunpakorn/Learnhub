@@ -27,7 +27,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/80 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          
+
           {/* Logo & Brand */}
           <Link href={isAuthOrOnboarding ? "#" : "/discovery"} className="flex items-center gap-3 group">
             <div className="w-11 h-11 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
@@ -39,7 +39,7 @@ export default function Navbar() {
                   Learn<span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300">Hub</span>
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">Active Learning Platform</p>
+              <p className="text-[11px] text-slate-400 hidden sm:block">Visual & Interactive Learning Platform</p>
             </div>
           </Link>
 
@@ -55,11 +55,10 @@ export default function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        isActive
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
                           ? "bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-semibold shadow-md shadow-orange-500/20"
                           : "text-slate-300 hover:text-white hover:bg-slate-800/60"
-                      }`}
+                        }`}
                     >
                       <Icon className={`w-4 h-4 ${isActive ? "text-slate-950 stroke-[2.5]" : "text-orange-400"}`} />
                       {item.name}
@@ -104,11 +103,10 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
-                  isActive
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${isActive
                     ? "bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold"
                     : "text-slate-300 hover:text-white hover:bg-slate-900"
-                }`}
+                  }`}
               >
                 <Icon className={`w-5 h-5 ${isActive ? "text-slate-950" : "text-orange-400"}`} />
                 {item.name}
