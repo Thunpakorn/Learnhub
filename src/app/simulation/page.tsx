@@ -862,7 +862,7 @@ export default function SimulationPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
-      
+
       {/* Background Decorative Ambient Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-tr from-sky-500/10 via-orange-500/10 to-purple-500/10 blur-[120px] rounded-full pointer-events-none" />
 
@@ -871,22 +871,22 @@ export default function SimulationPage() {
         {/* Dynamic Hero Header Banner */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900/60 p-6 sm:p-8 rounded-3xl border border-slate-800/80 backdrop-blur-xl shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 blur-3xl rounded-full pointer-events-none" />
-          
+
           <div className="space-y-3 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-sky-400 text-xs font-bold shadow-inner">
               <Cpu className="w-4 h-4 text-sky-400 animate-pulse" />
-              <span>Interactive Simulation Hub</span>
+              <span>Visual & Interactive Learning</span>
               <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-              <span className="text-slate-400 font-normal">Active Learning Engine</span>
+
             </div>
-            
+
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
               ห้องปฏิบัติการจำลอง{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-amber-400 to-orange-400">
-                3D Interactive
+                2.5D Interactive
               </span>
             </h1>
-            
+
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
               ทดลองปรับตัวแปรทางฟิสิกส์และคณิตศาสตร์เพื่อสังเกตผลลัพธ์แบบเรียลไทม์ เชื่อมโยงปรากฏการณ์จริงรอบตัวในชีวิตประจำวัน
             </p>
@@ -923,32 +923,29 @@ export default function SimulationPage() {
             <div className="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800/80 text-xs">
               <button
                 onClick={() => setActiveSubject("all")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                  activeSubject === "all"
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${activeSubject === "all"
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+                  }`}
               >
                 ทั้งหมด (8)
               </button>
               <button
                 onClick={() => setActiveSubject("ฟิสิกส์")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                  activeSubject === "ฟิสิกส์"
-                    ? "bg-sky-500/20 text-sky-400 border border-sky-500/30 shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${activeSubject === "ฟิสิกส์"
+                  ? "bg-sky-500/20 text-sky-400 border border-sky-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+                  }`}
               >
                 <Atom className="w-3.5 h-3.5" />
                 <span>ฟิสิกส์ (4)</span>
               </button>
               <button
                 onClick={() => setActiveSubject("คณิตศาสตร์")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                  activeSubject === "คณิตศาสตร์"
-                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${activeSubject === "คณิตศาสตร์"
+                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+                  }`}
               >
                 <MathIcon className="w-3.5 h-3.5" />
                 <span>คณิตศาสตร์ (4)</span>
@@ -964,11 +961,10 @@ export default function SimulationPage() {
                 <button
                   key={preset.id}
                   onClick={() => handleSelectPreset(preset)}
-                  className={`group p-4 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between relative overflow-hidden ${
-                    isSelected
-                      ? "bg-slate-900 border-sky-500/80 shadow-xl shadow-sky-500/10 ring-2 ring-sky-500/40 -translate-y-1"
-                      : "bg-slate-900/50 border-slate-800/80 hover:bg-slate-900/90 hover:border-slate-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40"
-                  }`}
+                  className={`group p-4 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between relative overflow-hidden ${isSelected
+                    ? "bg-slate-900 border-sky-500/80 shadow-xl shadow-sky-500/10 ring-2 ring-sky-500/40 -translate-y-1"
+                    : "bg-slate-900/50 border-slate-800/80 hover:bg-slate-900/90 hover:border-slate-700 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40"
+                    }`}
                   style={{
                     boxShadow: isSelected ? `0 10px 30px -10px ${preset.glowColor}` : undefined,
                   }}
@@ -998,7 +994,7 @@ export default function SimulationPage() {
                     <h3 className="text-sm font-bold text-white mb-1 line-clamp-1 group-hover:text-sky-300 transition-colors">
                       {preset.name}
                     </h3>
-                    
+
                     <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
                       {preset.description}
                     </p>
@@ -1046,11 +1042,10 @@ export default function SimulationPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-xl text-[10px] font-mono font-bold flex items-center gap-2 border transition-all ${
-                    isPlaying
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                      : "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                  }`}>
+                  <span className={`px-3 py-1 rounded-xl text-[10px] font-mono font-bold flex items-center gap-2 border transition-all ${isPlaying
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                    : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                    }`}>
                     <span className={`w-2 h-2 rounded-full ${isPlaying ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`} />
                     {isPlaying ? "LIVE ANIMATION" : "PAUSED"}
                   </span>
@@ -1087,11 +1082,10 @@ export default function SimulationPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsPlaying(!isPlaying)}
-                    className={`px-5 py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 ${
-                      isPlaying
-                        ? "bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-amber-500/20"
-                        : "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 hover:opacity-95 shadow-orange-500/25"
-                    }`}
+                    className={`px-5 py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 ${isPlaying
+                      ? "bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-amber-500/20"
+                      : "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 hover:opacity-95 shadow-orange-500/25"
+                      }`}
                   >
                     {isPlaying ? <Pause className="w-4 h-4 fill-current stroke-[2]" /> : <Play className="w-4 h-4 fill-current stroke-[2]" />}
                     <span>{isPlaying ? "หยุดชั่วคราว (Pause)" : "เริ่มการจำลอง (Play)"}</span>
@@ -1187,11 +1181,10 @@ export default function SimulationPage() {
                             <button
                               key={opt.value}
                               onClick={() => setParam(p.key, opt.value)}
-                              className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-between ${
-                                isSel
-                                  ? "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 border-transparent shadow-md font-extrabold"
-                                  : "bg-slate-900 text-slate-300 border-slate-800/80 hover:bg-slate-800 hover:border-slate-700"
-                              }`}
+                              className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-between ${isSel
+                                ? "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 border-transparent shadow-md font-extrabold"
+                                : "bg-slate-900 text-slate-300 border-slate-800/80 hover:bg-slate-800 hover:border-slate-700"
+                                }`}
                             >
                               <span>{opt.label}</span>
                               {isSel && <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />}
