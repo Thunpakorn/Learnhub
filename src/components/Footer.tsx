@@ -50,7 +50,7 @@ export default function Footer() {
               <li>
                 <Link href="/simulation" className="hover:text-orange-400 transition-colors flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                  Simulation Hub 3D
+                  Simulation Hub 2.5D
                 </Link>
               </li>
               <li>
