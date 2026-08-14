@@ -61,7 +61,7 @@ export default function LoginPage() {
               LearnHub Login
             </h1>
             <p className="text-xs text-slate-400">
-              ลงชื่อเข้าสู่ระบบ LearnHub Active Learning Platform
+              ลงชื่อเข้าสู่ระบบ LearnHub Visual & Interactive Learning Platform
             </p>
           </div>
         </div>
