@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { User, Lock, Eye, EyeOff, Sparkles, ArrowRight } from "lucide-react";
+import { User, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,14 +11,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMsg("");
 
-    // จำลองกระบวนการ Login แล้วนำทางไปยังหน้า Onboarding (เลือกความสนใจ)
     setTimeout(() => {
-      router.replace("/onboarding");
+      // ตรวจสอบ Username และ Password แบบ Hardcode (ไม่ต้องใช้ Database)
+      if (username.trim() === "learnhub" && password === "admin") {
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("user", JSON.stringify({ username: "learnhub" }));
+        router.replace("/onboarding");
+      } else {
+        setErrorMsg("Username หรือ Password ไม่ถูกต้อง");
+        setIsSubmitting(false);
+      }
     }, 400);
   };
 
@@ -57,6 +66,14 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Display Error Alert */}
+        {errorMsg && (
+          <div className="flex items-center gap-2.5 p-3.5 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-400 text-xs font-medium text-left animate-fadeIn">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-5 text-left">
           {/* Username Input */}
@@ -72,7 +89,10 @@ export default function LoginPage() {
                 type="text"
                 required
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (errorMsg) setErrorMsg("");
+                }}
                 placeholder="Username"
                 className="w-full bg-slate-950/80 border border-slate-700/80 rounded-2xl py-3.5 pl-11 pr-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm font-medium"
               />
@@ -92,7 +112,10 @@ export default function LoginPage() {
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errorMsg) setErrorMsg("");
+                }}
                 placeholder="••••••••"
                 className="w-full bg-slate-950/80 border border-slate-700/80 rounded-2xl py-3.5 pl-11 pr-11 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm font-medium"
               />
@@ -118,7 +141,7 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-slate-950 font-black text-base shadow-lg shadow-orange-500/20 hover:opacity-95 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-70"
             >
-              <span>{isSubmitting ? "กำลังเข้าสู่ระบบ..." : "Log In"}</span>
+              <span>{isSubmitting ? "กำลังตรวจสอบ..." : "Log In"}</span>
               <ArrowRight className="w-5 h-5 stroke-[2.5] group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -129,7 +152,7 @@ export default function LoginPage() {
           <div>
             <button
               type="button"
-              onClick={() => alert("ระบบลืมรหัสผ่าน: โปรดติดต่อผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน")}
+              onClick={() => alert("Username: learnhub\nPassword: admin")}
               className="text-xs text-amber-400/90 hover:text-amber-300 font-semibold transition-colors hover:underline"
             >
               Forgot Password?
