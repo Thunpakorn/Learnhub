@@ -23,7 +23,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed max-w-md">
-              แพลตฟอร์มการเรียนรู้ยุคใหม่สำหรับนักเรียนระดับมัธยมปลาย เปลี่ยนพฤติกรรมการเรียนรู้จาก Passive เป็น Active ค้นพบวิทยาศาสตร์และคณิตศาสตร์ที่ซ่อนอยู่ในชีวิตประจำวัน
+              เปลี่ยนการเรียนรู้แบบเดิม สู่พื้นที่ทดลองเสมือนจริง แพลตฟอร์มที่ชวน 'ลงมือ' ปรับและสำรวจสิ่งรอบตัว ค้นพบคำตอบที่ซ่อนอยู่ใกล้ตัว ในแบบที่ไม่เคยสังเกตมาก่อน
             </p>
             <div className="flex items-center gap-3 pt-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20">
@@ -50,7 +50,7 @@ export default function Footer() {
               <li>
                 <Link href="/simulation" className="hover:text-orange-400 transition-colors flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                  Simulation Hub 2.5D
+                  Simulation Hub 2.5  D
                 </Link>
               </li>
               <li>
