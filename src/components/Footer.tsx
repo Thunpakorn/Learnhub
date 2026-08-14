@@ -11,7 +11,7 @@ export default function Footer() {
     <footer className="bg-slate-950 border-t border-slate-900 text-slate-400 py-12 lg:py-16 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          
+
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-3 group">
@@ -28,7 +28,7 @@ export default function Footer() {
             <div className="flex items-center gap-3 pt-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20">
                 <Sparkles className="w-3.5 h-3.5" />
-                Active Learning Platform
+                Visual & Interactive Learning
               </span>
 
             </div>
