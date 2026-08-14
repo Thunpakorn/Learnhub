@@ -883,7 +883,7 @@ export default function SimulationPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
               ห้องปฏิบัติการจำลอง{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-amber-400 to-orange-400">
-                2.5D Interactive
+                2.5D Simulation
               </span>
             </h1>
 
