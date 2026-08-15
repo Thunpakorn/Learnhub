@@ -38,6 +38,9 @@ export default function Navbar() {
                 <span className="text-2xl font-black tracking-tight text-white font-sans">
                   Learn<span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300">Hub</span>
                 </span>
+                <span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-md">
+                  BETA
+                </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">Visual & Interactive Learning Platform</p>
             </div>
