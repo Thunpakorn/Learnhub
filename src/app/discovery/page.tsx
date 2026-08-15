@@ -365,17 +365,61 @@ export default function DiscoveryPage() {
   const handleSearch = async (event?: FormEvent<HTMLFormElement>, overrideQuery?: string) => {
     event?.preventDefault();
     const query = (overrideQuery ?? searchQuery).trim();
-    if (!query) {
-      setSearchError("โปรดพิมพ์คำค้นหาก่อนกดค้นหา");
-      setSearchResults(null);
-      return;
-    }
 
-    setSearchQuery(query);
     setIsSearching(true);
     setSearchError(null);
     setSearchResults(null);
 
+    // ── Branch A: attachments present → deep image analysis (orange panel) ──
+    if (attachments.length > 0) {
+      setSearchQuery(query || searchQuery);
+      try {
+        const formData = new FormData();
+        attachments.forEach(({ file }, idx) => {
+          if (file) formData.append(`image${idx}`, file);
+        });
+        if (query) formData.append("query", query);
+
+        const response = await fetch("/api/analyze-image", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.error || `เซิร์ฟเวอร์ตอบกลับ HTTP ${response.status}`);
+        }
+
+        const items: AiResultCard[] = (data.result ?? []).map((item: Record<string, unknown>) => ({
+          category: String(item.category ?? "การวิเคราะห์ภาพ"),
+          topicName: String(item.topicName ?? "ผลการวิเคราะห์"),
+          information: String(item.information ?? item.info ?? ""),
+          fullInformation: String(item.fullInformation ?? item.information ?? ""),
+          solution: String(item.solution ?? ""),
+          trick: String(item.trick ?? ""),
+          image: String(item.image ?? "🔍"),
+        }));
+
+        if (items.length === 0) throw new Error("AI ไม่ส่งข้อมูลกลับมา กรุณาลองใหม่อีกครั้ง");
+        setSearchResults(items);
+      } catch (error) {
+        setSearchError(error instanceof Error ? error.message : String(error));
+        setSearchResults(null);
+      } finally {
+        setIsSearching(false);
+      }
+      return;
+    }
+
+    // ── Branch B: no attachments → normal text search ───────────────────────
+    if (!query) {
+      setSearchError("โปรดพิมพ์คำค้นหาก่อนกดค้นหา");
+      setSearchResults(null);
+      setIsSearching(false);
+      return;
+    }
+
+    setSearchQuery(query);
     try {
       const response = await fetch("/api/search", {
         method: "POST",
@@ -385,7 +429,6 @@ export default function DiscoveryPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Surface the real error from the backend — don't hide it with fallback
         throw new Error(data?.error || `เซิร์ฟเวอร์ตอบกลับ HTTP ${response.status}`);
       }
 
@@ -396,12 +439,12 @@ export default function DiscoveryPage() {
       setSearchResults(normalized);
     } catch (error) {
       setSearchError(error instanceof Error ? error.message : String(error));
-      // Do NOT set fallback results here — we want the error to be visible
       setSearchResults(null);
     } finally {
       setIsSearching(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
@@ -670,7 +713,9 @@ export default function DiscoveryPage() {
               {!isSearching && searchResults && searchResults.length > 0 && (
                 <div className="w-full space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-white text-lg font-semibold">ความรู้เกี่ยวกับ{searchQuery}</h2>
+                    <h2 className="text-white text-lg font-semibold">
+                      {attachments.length > 0 ? "ความรู้จากภาพที่วิเคราะห์" : <>ความรู้เกี่ยวกับ{searchQuery}</>}
+                    </h2>
                     <span className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300">
                       {searchResults.length} หมวดหมู่
                     </span>
