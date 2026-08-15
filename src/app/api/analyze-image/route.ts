@@ -59,6 +59,18 @@ export async function POST(request: Request) {
 
   const hintQuery = formData.get("query")?.toString().trim() || "";
 
+  /**
+   * mode = "brief"  → triggered by the "ค้นหา" button
+   *   • 1-2 quick overview cards, concise 1-2 sentence descriptions
+   *   • Fewer tokens — fast response
+   *
+   * mode = "deep"   → triggered by the "วิเคราะห์ภาพด้วย AI" button
+   *   • 3-5 detailed STEM cards with full explanations, solutions & tricks
+   *   • More tokens — thorough deep-learning analysis
+   */
+  const mode = (formData.get("mode")?.toString().trim() || "deep") as "brief" | "deep";
+  const isBrief = mode === "brief";
+
   // Convert all images to base64 data URLs
   const imageContentParts: object[] = [];
   for (const { file } of imageEntries) {
@@ -67,24 +79,41 @@ export async function POST(request: Request) {
     const dataUrl = `data:${file.type || "image/jpeg"};base64,${base64}`;
     imageContentParts.push({
       type: "image_url",
-      image_url: { url: dataUrl, detail: "auto" },
+      image_url: { url: dataUrl, detail: isBrief ? "low" : "auto" },
     });
   }
 
-  const systemPrompt = `คุณคือผู้ช่วยวิเคราะห์ภาพเพื่อการเรียนรู้ STEM สำหรับแพลตฟอร์มการศึกษาไทย
-คุณมีความเชี่ยวชาญในการเชื่อมโยงสิ่งที่เห็นในภาพกับหลักการฟิสิกส์ คณิตศาสตร์ เคมี และชีววิทยา
+  const systemPrompt = isBrief
+    ? `คุณคือผู้ช่วยวิเคราะห์ภาพสำหรับการเรียนรู้ STEM ตอบสั้น กระชับ ตรงประเด็น
+ตอบเฉพาะ JSON array เท่านั้น ห้ามมีข้อความอื่นใด ห้ามใช้ markdown code block`
+    : `คุณคือผู้เชี่ยวชาญวิเคราะห์ภาพเชิงลึกเพื่อการเรียนรู้ STEM สำหรับแพลตฟอร์มการศึกษาไทย
+คุณมีความเชี่ยวชาญในการเชื่อมโยงสิ่งที่เห็นในภาพกับหลักการฟิสิกส์ คณิตศาสตร์ เคมี และชีววิทยาอย่างละเอียดและลึกซึ้ง
 ตอบเฉพาะ JSON array เท่านั้น ห้ามมีข้อความอื่นใด ห้ามใช้ markdown code block`;
 
-  const userPromptText = `วิเคราะห์ภาพที่แนบมานี้${hintQuery ? ` โดยเน้นที่ "${hintQuery}"` : ""} แล้วอธิบายว่าภาพนี้เกี่ยวข้องกับหลักการ STEM อะไรบ้าง
-สร้าง JSON array 3-5 รายการ โดยแต่ละรายการคือมุมมองหรือหมวดหมู่ความรู้ที่แตกต่างกัน (เช่น ฟิสิกส์ คณิตศาสตร์ ชีววิทยา เคมี ความรู้ทั่วไป) ที่เชื่อมโยงกับสิ่งที่อยู่ในภาพ
+  const userPromptText = isBrief
+    ? `ดูภาพนี้${hintQuery ? ` และคำถาม "${hintQuery}"` : ""} แล้วตอบสั้นๆ ว่าภาพนี้เกี่ยวกับอะไร เชื่อมกับหลักการ STEM ใด
+สร้าง JSON array 1-2 รายการ (ภาพรวมสั้นๆ เท่านั้น)
+รูปแบบ JSON:
+[
+  {
+    "category": "หมวดหมู่วิชา",
+    "topicName": "ชื่อหัวข้อสั้นๆ ที่เกี่ยวกับภาพ",
+    "information": "สรุปภาพรวม 1-2 ประโยค บอกว่าภาพนี้เกี่ยวกับอะไรและเชื่อมกับหลักการอะไร",
+    "solution": "ข้อสรุปสั้น 1 ประโยค",
+    "trick": "ข้อควรรู้สั้นๆ 1 ประโยค",
+    "image": "emoji 1 ตัว"
+  }
+]`
+    : `วิเคราะห์ภาพที่แนบมานี้${hintQuery ? ` โดยเน้นที่ "${hintQuery}"` : ""} อย่างละเอียดและลึกซึ้ง อธิบายหลักการ STEM ที่ซ่อนอยู่ในภาพ
+สร้าง JSON array 3-5 รายการ โดยแต่ละรายการคือมุมมองความรู้ที่แตกต่างกัน (ฟิสิกส์ คณิตศาสตร์ ชีววิทยา เคมี ความรู้ทั่วไป)
 รูปแบบ JSON:
 [
   {
     "category": "ชื่อหมวดหมู่วิชา เช่น ฟิสิกส์ / คณิตศาสตร์ / เคมี / ชีววิทยา / ความรู้ทั่วไป",
     "topicName": "ชื่อหัวข้อที่เชื่อมกับสิ่งที่เห็นในภาพ",
-    "information": "คำอธิบาย 3-4 ประโยค อธิบายหลักการที่ซ่อนอยู่ในภาพอย่างละเอียดและน่าสนใจ",
-    "solution": "สรุปสั้นๆ 1-2 ประโยค ว่าหลักการนี้ทำงานอย่างไร หรือมีสูตร/ข้อเท็จจริงสำคัญอะไร",
-    "trick": "เคล็ดลับหรือสิ่งที่น่าแปลกใจที่สุดเกี่ยวกับหัวข้อนี้ เพื่อช่วยจำหรือสร้างความเข้าใจ",
+    "information": "คำอธิบายเชิงลึก 4-6 ประโยค อธิบายหลักการและกลไกที่ซ่อนอยู่อย่างละเอียด",
+    "solution": "อธิบาย 2-3 ประโยค ว่าหลักการนี้ทำงานอย่างไร พร้อมสูตรหรือข้อเท็จจริงสำคัญ",
+    "trick": "เคล็ดลับหรือข้อค้นพบที่น่าแปลกใจที่ช่วยให้เข้าใจและจำได้ดีขึ้น",
     "image": "emoji ที่เหมาะสมกับหมวดหมู่นี้ 1 ตัว"
   }
 ]`;
@@ -96,6 +125,7 @@ export async function POST(request: Request) {
 
   let lastError = "";
   const modelsToTry = useOpenRouter ? VISION_MODELS : ["gpt-4o-mini"];
+  const maxTokens = isBrief ? 600 : 2400;
 
   for (const model of modelsToTry) {
     try {
@@ -113,8 +143,8 @@ export async function POST(request: Request) {
             { role: "system", content: systemPrompt },
             { role: "user", content: messageContent },
           ],
-          max_tokens: 2000,
-          temperature: 0.5,
+          max_tokens: maxTokens,
+          temperature: isBrief ? 0.3 : 0.6,
         }),
       });
 

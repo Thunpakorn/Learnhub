@@ -371,16 +371,60 @@ export default function DiscoveryPage() {
   const handleSearch = async (event?: FormEvent<HTMLFormElement>, overrideQuery?: string) => {
     event?.preventDefault();
     const query = (overrideQuery ?? searchQuery).trim();
-    if (!query) {
-      setSearchError("โปรดพิมพ์คำค้นหาก่อนกดค้นหา");
-      setSearchResults(null);
-      return;
-    }
 
-    setSearchQuery(query);
+    setSearchQuery(query || searchQuery);
     setIsSearching(true);
     setSearchError(null);
     setSearchResults(null);
+
+    // ── Branch: attachments present → brief image analysis (orange panel) ──
+    if (attachments.length > 0) {
+      try {
+        const formData = new FormData();
+        attachments.forEach(({ file }, idx) => {
+          if (file) formData.append(`image${idx}`, file);
+        });
+        formData.append("mode", "brief");
+        if (query) formData.append("query", query);
+
+        const response = await fetch("/api/analyze-image", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.error || `เซิร์ฟเวอร์ตอบกลับ HTTP ${response.status}`);
+        }
+
+        const items: AiResultCard[] = (data.result ?? []).map((item: Record<string, unknown>) => ({
+          category: String(item.category ?? "ภาพรวบรัด"),
+          topicName: String(item.topicName ?? "ผลสรุป"),
+          information: String(item.information ?? item.info ?? ""),
+          fullInformation: String(item.fullInformation ?? item.information ?? ""),
+          solution: String(item.solution ?? ""),
+          trick: String(item.trick ?? ""),
+          image: String(item.image ?? "🔍"),
+        }));
+
+        if (items.length === 0) throw new Error("AI ไม่ส่งข้อมูลกลับมา");
+        setSearchResults(items);
+      } catch (error) {
+        setSearchError(error instanceof Error ? error.message : String(error));
+        setSearchResults(null);
+      } finally {
+        setIsSearching(false);
+      }
+      return;
+    }
+
+    // ── Branch: no attachments → normal text search ────────────────────────
+    if (!query) {
+      setSearchError("โปรดพิมพ์คำค้นหาก่อนกดค้นหา");
+      setSearchResults(null);
+      setIsSearching(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/search", {
@@ -391,7 +435,6 @@ export default function DiscoveryPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Surface the real error from the backend — don't hide it with fallback
         throw new Error(data?.error || `เซิร์ฟเวอร์ตอบกลับ HTTP ${response.status}`);
       }
 
@@ -402,7 +445,6 @@ export default function DiscoveryPage() {
       setSearchResults(normalized);
     } catch (error) {
       setSearchError(error instanceof Error ? error.message : String(error));
-      // Do NOT set fallback results here — we want the error to be visible
       setSearchResults(null);
     } finally {
       setIsSearching(false);
@@ -429,6 +471,7 @@ export default function DiscoveryPage() {
       attachments.forEach(({ file }, idx) => {
         if (file) formData.append(`image${idx}`, file);
       });
+      formData.append("mode", "deep"); // deep analysis for the violet panel
       if (searchQuery.trim()) formData.append("query", searchQuery.trim());
 
       const response = await fetch("/api/analyze-image", {
@@ -724,7 +767,7 @@ export default function DiscoveryPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  <span>กำลังค้นหาคำตอบ...</span>
+                  <span>{attachments.length > 0 ? "กำลังวิเคราะห์ภาพ (สรุป)..." : "กำลังค้นหาคำตอบ..."}</span>
                 </div>
               )}
 
@@ -747,7 +790,11 @@ export default function DiscoveryPage() {
               {!isSearching && searchResults && searchResults.length > 0 && (
                 <div className="w-full space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-white text-lg font-semibold">ความรู้เกี่ยวกับ{searchQuery}</h2>
+                    <h2 className="text-white text-lg font-semibold">
+                      {attachments.length > 0
+                        ? <>ภาพรวบรัดจากภาพที่แนบ<span className="text-orange-400 ml-1 text-sm font-normal">(สั้น กด "วิเคราะห์ภาพด้วย AI" เพื่อดูเพิ่มเติม)</span></>
+                        : <>ความรู้เกี่ยวกับ{searchQuery}</>}
+                    </h2>
                     <span className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-semibold text-slate-300">
                       {searchResults.length} หมวดหมู่
                     </span>
