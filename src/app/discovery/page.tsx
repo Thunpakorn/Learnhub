@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, Filter, Plus, Paperclip, Camera, FileText, X } from "lucide-react";
+import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, Filter, Plus, Paperclip, Camera, FileText, X, FlipHorizontal, SwitchCamera } from "lucide-react";
 
 interface KnowledgeCard {
   id: string;
@@ -224,6 +224,8 @@ export default function DiscoveryPage() {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState<boolean>(false);
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const streamRef = useRef<MediaStream | null>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
+  const [isMirrored, setIsMirrored] = useState<boolean>(false);
 
   const subjects = [
     { name: "ทั้งหมด", icon: Filter },
@@ -251,16 +253,40 @@ export default function DiscoveryPage() {
     event.target.value = "";
   };
 
+  const startCameraStream = async (mode: "user" | "environment") => {
+    // Stop any existing stream first
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
+    streamRef.current = stream;
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(() => { /* ignore */ });
+    }
+  };
+
   const handleTakePhoto = async () => {
     setCameraError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      streamRef.current = stream;
+      await startCameraStream(facingMode);
       setIsCameraActive(true);
       setShowAttachmentMenu(false);
     } catch (error) {
       setCameraError("ไม่สามารถเข้าถึงกล้องได้ โปรดอนุญาตการใช้งานกล้อง");
       setIsCameraActive(false);
+    }
+  };
+
+  const swapCamera = async () => {
+    const newMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(newMode);
+    try {
+      await startCameraStream(newMode);
+    } catch {
+      // Some devices only have one camera — swapping may fail, restore old mode
+      setFacingMode(facingMode);
     }
   };
 
@@ -283,6 +309,11 @@ export default function DiscoveryPage() {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    // If mirror is ON, flip the canvas so the saved photo is not mirrored
+    if (isMirrored) {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     canvas.toBlob((blob) => {
       if (!blob) return;
@@ -525,6 +556,7 @@ export default function DiscoveryPage() {
           {isCameraActive && (
             <div className="fixed inset-0 z-50 bg-slate-950/95 p-4 sm:p-6">
               <div className="flex h-full flex-col">
+                {/* Header */}
                 <div className="flex items-center justify-between gap-4 mb-4">
                   <div>
                     <h3 className="text-white text-xl font-semibold">โหมดกล้องเต็มหน้าจอ</h3>
@@ -539,21 +571,69 @@ export default function DiscoveryPage() {
                   </button>
                 </div>
 
+                {/* Camera preview */}
                 <div className="relative flex-1 overflow-hidden rounded-3xl bg-black">
-                  <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="h-full w-full object-cover transition-transform duration-300"
+                    style={{ transform: isMirrored ? "scaleX(-1)" : "scaleX(1)" }}
+                  />
+
+                  {/* Overlay badge: current camera */}
+                  <div className="absolute top-3 left-3 rounded-full bg-slate-900/70 border border-slate-700 px-3 py-1 text-xs text-slate-300 backdrop-blur-sm">
+                    {facingMode === "user" ? "📷 กล้องหน้า" : "📷 กล้องหลัง"}
+                  </div>
+
+                  {/* Mirror badge */}
+                  {isMirrored && (
+                    <div className="absolute top-3 right-3 rounded-full bg-blue-500/20 border border-blue-500/40 px-3 py-1 text-xs text-blue-300 backdrop-blur-sm">
+                      กระจก ON
+                    </div>
+                  )}
                 </div>
 
+                {/* Bottom controls */}
                 <div className="mt-4 flex items-center justify-between gap-3">
+                  {/* Left: Swap camera */}
+                  <button
+                    type="button"
+                    onClick={swapCamera}
+                    title="สลับกล้อง"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 hover:border-slate-500 hover:text-white transition"
+                  >
+                    <SwitchCamera className="w-5 h-5" />
+                    <span className="hidden sm:inline text-sm">สลับกล้อง</span>
+                  </button>
+
+                  {/* Center: Capture */}
                   <button
                     type="button"
                     onClick={capturePhoto}
-                    className="inline-flex items-center justify-center gap-2 rounded-3xl bg-orange-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400 transition"
+                    className="inline-flex items-center justify-center gap-2 rounded-3xl bg-orange-500 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400 transition shadow-lg shadow-orange-500/30"
                   >
                     <Camera className="w-5 h-5" />
                     ถ่ายรูป
                   </button>
-                  <div className="text-slate-400 text-xs sm:text-sm">หากไม่เห็นภาพ ให้อนุญาตการเข้าถึงกล้องในเบราว์เซอร์ของคุณ</div>
+
+                  {/* Right: Mirror toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMirrored((prev) => !prev)}
+                    title={isMirrored ? "ปิดโหมดกระจก" : "เปิดโหมดกระจก"}
+                    className={`inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm transition ${
+                      isMirrored
+                        ? "border-blue-500/60 bg-blue-500/15 text-blue-300 hover:bg-blue-500/25"
+                        : "border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-500 hover:text-white"
+                    }`}
+                  >
+                    <FlipHorizontal className="w-5 h-5" />
+                    <span className="hidden sm:inline">{isMirrored ? "กระจก ON" : "กระจก OFF"}</span>
+                  </button>
                 </div>
+
+                <p className="mt-2 text-center text-slate-500 text-xs">หากไม่เห็นภาพ ให้อนุญาตการเข้าถึงกล้องในเบราว์เซอร์ของคุณ</p>
               </div>
             </div>
           )}
