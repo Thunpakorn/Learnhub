@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, Filter, Plus, Paperclip, Camera, FileText, X, FlipHorizontal, SwitchCamera } from "lucide-react";
+import { Search, Sparkles, Compass, Atom, Calculator, Dna, Flame, Filter, Plus, Paperclip, Camera, FileText, X, FlipHorizontal, SwitchCamera, ScanSearch } from "lucide-react";
 
 interface KnowledgeCard {
   id: string;
@@ -227,6 +227,12 @@ export default function DiscoveryPage() {
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [isMirrored, setIsMirrored] = useState<boolean>(false);
 
+  // ── Image / file analysis state (separate from text-search) ──────────────
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisResults, setAnalysisResults] = useState<AiResultCard[] | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [expandedAnalysisIndex, setExpandedAnalysisIndex] = useState<number | null>(null);
+
   const subjects = [
     { name: "ทั้งหมด", icon: Filter },
     { name: "ฟิสิกส์", icon: Atom },
@@ -403,6 +409,58 @@ export default function DiscoveryPage() {
     }
   };
 
+  // ── analyzeAttachments ── completely separate from handleSearch ──────────
+  /**
+   * Sends every attached file/photo to /api/analyze-image and surfaces the
+   * STEM-structured results in the vision result panel below the search bar.
+   * This function is intentionally independent from handleSearch so both
+   * pipelines can be maintained and tested in isolation.
+   */
+  const analyzeAttachments = async () => {
+    if (attachments.length === 0) return;
+
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    setAnalysisResults(null);
+    setExpandedAnalysisIndex(null);
+
+    try {
+      const formData = new FormData();
+      attachments.forEach(({ file }, idx) => {
+        if (file) formData.append(`image${idx}`, file);
+      });
+      if (searchQuery.trim()) formData.append("query", searchQuery.trim());
+
+      const response = await fetch("/api/analyze-image", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || `เซิร์ฟเวอร์ตอบกลับ HTTP ${response.status}`);
+      }
+
+      const items: AiResultCard[] = (data.result ?? []).map((item: Record<string, unknown>) => ({
+        category: String(item.category ?? "การวิเคราะห์ภาพ"),
+        topicName: String(item.topicName ?? "ผลการวิเคราะห์"),
+        information: String(item.information ?? item.info ?? ""),
+        fullInformation: String(item.fullInformation ?? item.information ?? ""),
+        solution: String(item.solution ?? ""),
+        trick: String(item.trick ?? ""),
+        image: String(item.image ?? "🔍"),
+      }));
+
+      if (items.length === 0) throw new Error("AI ไม่ส่งข้อมูลกลับมา กรุณาลองใหม่อีกครั้ง");
+      setAnalysisResults(items);
+    } catch (err) {
+      setAnalysisError(err instanceof Error ? err.message : String(err));
+      setAnalysisResults(null);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-10">
@@ -510,23 +568,42 @@ export default function DiscoveryPage() {
 
           {attachments.length > 0 && (
             <div className="mb-4 rounded-3xl border border-slate-800 bg-slate-900/90 p-4 shadow-lg shadow-slate-950/10">
+              {/* Header row */}
               <div className="flex items-center justify-between gap-4 mb-3">
                 <div className="flex items-center gap-2 text-slate-200 font-semibold">
                   <FileText className="w-5 h-5 text-amber-300" />
-                  <span>ไฟล์ที่แนบ</span>
+                  <span>ไฟล์ที่แนบ ({attachments.length})</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    attachments.forEach((attachment) => URL.revokeObjectURL(attachment.previewUrl));
-                    setAttachments([]);
-                  }}
-                  className="text-slate-400 hover:text-white flex items-center gap-1"
-                >
-                  <X className="w-4 h-4" />
-                  ลบทั้งหมด
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* ── ANALYZE BUTTON ── separate from text search ── */}
+                  <button
+                    id="btn-analyze-image"
+                    type="button"
+                    onClick={analyzeAttachments}
+                    disabled={isAnalyzing}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-violet-500/50 bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-300 hover:bg-violet-500/20 hover:border-violet-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ScanSearch className="w-4 h-4" />
+                    {isAnalyzing ? "กำลังวิเคราะห์..." : "วิเคราะห์ภาพด้วย AI"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      attachments.forEach((a) => URL.revokeObjectURL(a.previewUrl));
+                      setAttachments([]);
+                      setAnalysisResults(null);
+                      setAnalysisError(null);
+                    }}
+                    className="text-slate-400 hover:text-white flex items-center gap-1 text-sm"
+                  >
+                    <X className="w-4 h-4" />
+                    ลบทั้งหมด
+                  </button>
+                </div>
               </div>
+
+              {/* Thumbnails */}
               <div className="flex flex-wrap gap-3">
                 {attachments.map((attachment) => (
                   <div key={attachment.id} className="min-w-[160px] max-w-[220px] rounded-3xl border border-slate-700 bg-slate-950/90 overflow-hidden shadow-lg shadow-slate-950/20">
@@ -749,6 +826,129 @@ export default function DiscoveryPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>
                     </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════
+               IMAGE / FILE ANALYSIS RESULT PANEL
+               Completely separate from the text-search pipeline above.
+               Triggered by analyzeAttachments() via the "วิเคราะห์ภาพด้วย AI" button.
+          ══════════════════════════════════════════════════════════════ */}
+          {(isAnalyzing || analysisError || analysisResults) && (
+            <div className="mt-4 rounded-3xl border border-violet-800/40 bg-violet-950/20 p-6 shadow-lg shadow-violet-950/20">
+              {/* Section label */}
+              <div className="flex items-center gap-2 mb-4">
+                <ScanSearch className="w-5 h-5 text-violet-400" />
+                <span className="text-violet-300 text-sm font-bold uppercase tracking-widest">ผลการวิเคราะห์ภาพด้วย AI</span>
+              </div>
+
+              {/* Loading */}
+              {isAnalyzing && (
+                <div className="flex items-center gap-3 text-slate-300">
+                  <svg className="animate-spin h-5 w-5 text-violet-400 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  <span>กำลังวิเคราะห์ภาพ...</span>
+                </div>
+              )}
+
+              {/* Error */}
+              {!isAnalyzing && analysisError && (
+                <div className="rounded-2xl border border-rose-700/40 bg-rose-950/30 p-4 text-rose-300">
+                  <p className="font-semibold mb-1">⚠️ เกิดข้อผิดพลาดในการวิเคราะห์ภาพ</p>
+                  <p className="text-sm leading-relaxed">{analysisError}</p>
+                  <button
+                    type="button"
+                    onClick={analyzeAttachments}
+                    className="mt-3 text-xs font-semibold text-violet-400 hover:text-violet-300 underline underline-offset-2"
+                  >
+                    ลองอีกครั้ง
+                  </button>
+                </div>
+              )}
+
+              {/* Result cards */}
+              {!isAnalyzing && analysisResults && analysisResults.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-white text-lg font-semibold">
+                      ความรู้จากภาพที่วิเคราะห์
+                    </h2>
+                    <span className="rounded-full border border-violet-700 bg-violet-800/30 px-3 py-1 text-xs font-semibold text-violet-300">
+                      {analysisResults.length} หมวดหมู่
+                    </span>
+                  </div>
+
+                  <div className="grid w-full gap-4 lg:grid-cols-2">
+                    {analysisResults.map((item, index) => (
+                      <article
+                        key={`vision-${item.category}-${index}`}
+                        className="rounded-3xl border border-violet-700/40 bg-gradient-to-br from-violet-950/60 via-slate-900 to-slate-950 p-5 shadow-lg"
+                      >
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                          <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-300">
+                            {item.category}
+                          </span>
+                          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-900/40 text-2xl">
+                            {item.image || "🔍"}
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 text-sm text-slate-300">
+                          <div>
+                            <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">ชื่อหัวข้อ</p>
+                            <h3 className="text-base font-semibold text-white">{item.topicName}</h3>
+                          </div>
+
+                          <div>
+                            <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">ข้อมูล</p>
+                            <p className="leading-relaxed">
+                              {expandedAnalysisIndex === index
+                                ? item.fullInformation ?? item.information
+                                : item.information.length > 220
+                                ? `${item.information.slice(0, 220)}...`
+                                : item.information}
+                            </p>
+                            {((item.fullInformation && item.fullInformation !== item.information) || item.information.length > 220) && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedAnalysisIndex((cur) => (cur === index ? null : index))
+                                }
+                                className="mt-2 inline-flex rounded-full border border-violet-700 bg-violet-800/30 px-4 py-2 text-sm font-semibold text-violet-200 hover:bg-violet-700/40"
+                              >
+                                {expandedAnalysisIndex === index ? "ย่อ" : "เพิ่มเติม"}
+                              </button>
+                            )}
+                          </div>
+
+                          <div>
+                            <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">คำตอบ / วิธีแก้</p>
+                            <p className="leading-relaxed text-amber-200">{item.solution}</p>
+                          </div>
+
+                          <div>
+                            <p className="mb-1 text-[11px] uppercase tracking-[0.25em] text-slate-500">ทริก</p>
+                            <p className="leading-relaxed text-emerald-300">{item.trick}</p>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+
+                  {/* Clear vision results */}
+                  <div className="pt-1 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setAnalysisResults(null); setAnalysisError(null); }}
+                      className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition"
+                    >
+                      <X className="w-3.5 h-3.5" /> ล้างผลการวิเคราะห์ภาพ
+                    </button>
                   </div>
                 </div>
               )}
